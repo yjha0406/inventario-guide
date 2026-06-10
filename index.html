@@ -44,6 +44,16 @@
   .card .ko{font-size:14.5px;font-weight:700;letter-spacing:-.01em;padding-right:18px}
   .card .en{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.02em}
   .card .cat{margin-top:5px;font-size:10px;color:#999;font-weight:600}
+  .card .more{margin-top:6px;font-size:10px;font-weight:700;color:#b3ad9e;letter-spacing:.02em;user-select:none}
+  .card.open .more{color:var(--c)}
+  .card .info{max-height:0;overflow:hidden;opacity:0;margin-top:0;
+    transition:max-height .25s ease,opacity .2s ease,margin-top .25s ease}
+  .card.open .info{max-height:200px;opacity:1;margin-top:7px}
+  .card .info .item{font-size:11.5px;color:#555;line-height:1.45;padding-top:7px;
+    border-top:1px dashed var(--line)}
+  .card .info .locbtn{margin-top:8px;width:100%;padding:7px;border:1.5px solid var(--line);
+    background:#fff;border-radius:8px;font-size:11px;font-weight:700;color:#2f6fed;cursor:pointer}
+  .card.here .info .locbtn{background:#2f6fed;color:#fff;border-color:#2f6fed}
   .star{position:absolute;top:8px;right:8px;font-size:18px;cursor:pointer;line-height:1;color:#d9d4c7;
     background:none;border:none;padding:2px}
   .star.on{color:#f0a92b}
@@ -137,6 +147,13 @@
           <rect x="2033" y="808" width="154" height="44" rx="8" fill="#e6332a"></rect>
           <text x="2110" y="839" font-size="29" fill="#fff">출구 OUT</text>
         </g>
+        <g id="hiBooth" style="display:none">
+          <circle r="34" fill="none" stroke="#e9a23b" stroke-width="6" opacity="0.9">
+            <animate attributeName="r" values="20;52;20" dur="1.2s" repeatCount="indefinite"></animate>
+            <animate attributeName="opacity" values="0.95;0.1;0.95" dur="1.2s" repeatCount="indefinite"></animate>
+          </circle>
+          <circle r="13" fill="#e9a23b" stroke="#fff" stroke-width="4"></circle>
+        </g>
         <g id="hereDot" style="display:none">
           <circle id="accCircle" r="0" fill="#2f6fed" opacity="0.12" style="display:none"></circle>
           <circle r="40" fill="#2f6fed" opacity="0.22"><animate attributeName="r" values="22;46;22" dur="1.4s" repeatCount="indefinite"></animate></circle>
@@ -193,128 +210,128 @@ const CATS = {
 
 const BOOTHS = [
   // SMALL THING
-  ["A02","mt × 롤드페인트","mt × rolledpaint","small"],
-  ["B02","리마 리마","LIMPA LIMPA","small"],
-  ["B03","후르츠후라이","FRUITFRIES","small"],
-  ["B06","이와코","IWAKO","small"],
-  ["C03","하우폴리소클럽","HWF.RISOCLUB","small"],
-  ["E03","구버","GOOBER","small"],
-  ["E05","미시아","MICIA","small"],
-  ["E05","리라","LYRA","small"],
-  ["F01","라이프앤피시스","LIFE&PIECES","small"],
-  ["F03","이로하","IROHA","small"],
-  ["F07","플래그","FLAGG","small"],
-  ["F08","썸무드디자인","SOME MOOD DESIGN","small"],
-  ["F09","보키","BOKI","small"],
-  ["G03","수키도키","SUKEYDOKEY","small"],
-  ["G06","아무개씨","AHMUGAE_C","small"],
-  ["G07","산비","SANBI","small"],
-  ["H02","공일","0.1","small"],
-  ["H05","미니모니","MINIMONI","small"],
-  ["H06","히토토키","HITOTOKI","small"],
-  ["H07","프레젠트프레젠트","PRESENT PRESENT","small"],
-  ["H09","키오스크키오스크","KIOSKKIOSK","small"],
-  ["I08","리틀템포디자인","LITTLE TEMPO DESIGN","small"],
-  ["I09","아이코닉","ICONIC","small"],
-  ["J03","프렐류드스튜디오","PRELUDE STUDIO","small"],
-  ["J09","낫낫네버","NO NOT NEVER","small"],
-  ["J10","풀풀","PULPUL","small"],
-  ["L02","라이플페이퍼","RIFLE PAPER CO.","small"],
-  ["L04","지에이","GEEHEY","small"],
-  ["L06","슈아뜰리에","SUATELIER","small"],
+  ["A02","mt × 롤드페인트","mt × rolledpaint","small","마스킹테이프 — mt(와시 마테 원조)×롤드페인트 콜라보"],
+  ["B02","리마 리마","LIMPA LIMPA","small","가죽·거울 등 핸드메이드 잡화"],
+  ["B03","후르츠후라이","FRUITFRIES","small","스티커·마스킹테이프 — 그래픽 문구 디자인랩"],
+  ["B06","이와코","IWAKO","small","모양 지우개 — 일본 캐릭터/푸드 미니 지우개"],
+  ["C03","하우폴리소클럽","HWF.RISOCLUB","small","리소그래피 인쇄물·굿즈 — 키치 컬러, 워크숍"],
+  ["E03","구버","GOOBER","small","크레용·드로잉 도구 — 땅콩프레스 드로잉 브랜드"],
+  ["E05","미시아","MICIA","small","스티커·씰 등 데코 문구"],
+  ["E05","리라","LYRA","small","색연필 — 독일 미술 색연필"],
+  ["F01","라이프앤피시스","LIFE&PIECES","small","필기류·플래너 — 라이브워크 디자인문구"],
+  ["F03","이로하","IROHA","small","일본풍 데코 문구"],
+  ["F07","플래그","FLAGG","small","디자인 문구·잡화"],
+  ["F08","썸무드디자인","SOME MOOD DESIGN","small","스티커·저널 — 페이스 스티커, 무드 노트"],
+  ["F09","보키","BOKI","small","일러스트 문구 — 빈티지·내추럴 무드"],
+  ["G03","수키도키","SUKEYDOKEY","small","일러스트 스티커·굿즈"],
+  ["G06","아무개씨","AHMUGAE_C","small","메모패드·키링·마테 — 레트로 문구"],
+  ["G07","산비","SANBI","small","스탬프·잉크 — 일본 100년 도장 제조사"],
+  ["H02","공일","0.1","small","디자인 문구"],
+  ["H05","미니모니","MINIMONI","small","미니 스티커 — 다꾸용 데코 스티커"],
+  ["H06","히토토키","HITOTOKI","small","마스킹테이프·스티커 — 일본 King Jim"],
+  ["H07","프레젠트프레젠트","PRESENT PRESENT","small","선물 패키지·카드·마테"],
+  ["H09","키오스크키오스크","KIOSKKIOSK","small","문구 편집숍/플랫폼 — 문구 큐레이션"],
+  ["I08","리틀템포디자인","LITTLE TEMPO DESIGN","small","떡메모지·문구 — 북촌 스튜디오"],
+  ["I09","아이코닉","ICONIC","small","다이어리·플래너 — 위클리/먼슬리"],
+  ["J03","프렐류드스튜디오","PRELUDE STUDIO","small","컨셉추얼 디자인 문구"],
+  ["J09","낫낫네버","NO NOT NEVER","small","디자인 문구·잡화"],
+  ["J10","풀풀","PULPUL","small","일러스트 문구 — 문구+음악 브랜드"],
+  ["L02","라이플페이퍼","RIFLE PAPER CO.","small","플로럴 카드·문구 — 미국 일러스트 지류"],
+  ["L04","지에이","GEEHEY","small","쳐비펜·감성문구 — 대구 문구점"],
+  ["L06","슈아뜰리에","SUATELIER","small","스티커 — 아날로그 감성 스티커 대표"],
   // WORKSHOP & SHOWCASE
-  ["A07","더한글","THE HANGEUL","workshop"],
-  ["B07","서울디자인재단 × 서울스티커삼","SEOUL DESIGN FOUNDATION","workshop"],
-  ["C07","파티","PaTI","workshop"],
-  ["C09","삼원페이퍼 워크숍","SAMWON PAPER WORKSHOP","workshop"],
-  ["D04","키오스크키오스크 문구클럽 & 워크숍","KIOSKKIOSK MUNGU CLUB & WORKSHOP","workshop"],
-  ["L09","트래블러스컴퍼니 워크숍","TRAVELER'S COMPANY WORKSHOP","workshop"],
+  ["A07","더한글","THE HANGEUL","workshop","한글의 아름다움 테마 문구"],
+  ["B07","서울디자인재단 × 서울스티커삼","SEOUL DESIGN FOUNDATION","workshop","기관×스티커 콜라보 쇼케이스"],
+  ["C07","파티","PaTI","workshop","파주타이포그라피학교 — 디자인 교육기관"],
+  ["C09","삼원페이퍼 워크숍","SAMWON PAPER WORKSHOP","workshop","종이 체험 워크숍"],
+  ["D04","키오스크키오스크 문구클럽 & 워크숍","KIOSKKIOSK MUNGU CLUB & WORKSHOP","workshop","문구 큐레이션 클럽 워크숍"],
+  ["L09","트래블러스컴퍼니 워크숍","TRAVELER'S COMPANY WORKSHOP","workshop","트래블러스 노트 커스텀 워크숍"],
   // WRITING & DRAWING
-  ["A03","파버카스텔","FABER-CASTELL","writing"],
-  ["A04","카키모리","KAKIMORI","writing"],
-  ["A05","흑심","BLACKHEART","writing"],
-  ["A08","카렌다쉬","CARAN D'ACHE","writing"],
-  ["A09","세일러","SAILOR","writing"],
-  ["A10","쉴드컬러스","SHIELDCOLORS","writing"],
-  ["A11","코픽","COPIC","writing"],
-  ["C02","글일다","WEARINGEUL","writing"],
-  ["E01","도미넌트인더스트리","DOMINANT INDUSTRY","writing"],
-  ["E04","한국파이로트","KOREA PILOT","writing"],
-  ["F06","제브라","ZEBRA","writing"],
-  ["H06","레이메이 켑트","RAYMAY KEPT","writing"],
-  ["H06","펜텔","PENTEL","writing"],
-  ["H06","우디","WOODHI","writing"],
-  ["J01","유니","UNI","writing"],
-  ["J07","자크 허빈","JACQUES HERBIN","writing"],
-  ["L01","지구화학","GLOBE CHEMICAL","writing"],
-  ["L03","클리펜","CLIPEN","writing"],
+  ["A03","파버카스텔","FABER-CASTELL","writing","연필·색연필 — 독일, 폴리크로모스"],
+  ["A04","카키모리","KAKIMORI","writing","맞춤 만년필·잉크 블렌딩 — 일본 구라마에"],
+  ["A05","흑심","BLACKHEART","writing","연필·드로잉 문구"],
+  ["A08","카렌다쉬","CARAN D'ACHE","writing","색연필·볼펜 — 스위스, 849"],
+  ["A09","세일러","SAILOR","writing","만년필 — 일본, 프로기어·1911"],
+  ["A10","쉴드컬러스","SHIELDCOLORS","writing","물감(아크릴/유화) — 1978년 제조사"],
+  ["A11","코픽","COPIC","writing","알코올 마커 — 일본, 일러스트 채색 표준"],
+  ["C02","글일다","WEARINGEUL","writing","문학 잉크·유리펜 — 문학작품 모티프"],
+  ["E01","도미넌트인더스트리","DOMINANT INDUSTRY","writing","만년필 잉크 — 펄/미러/홀로그램 특수 잉크"],
+  ["E04","한국파이로트","KOREA PILOT","writing","만년필·프릭션 — 지워지는 펜·G2"],
+  ["F06","제브라","ZEBRA","writing","펜 — 일본, 마일드라이너·사라사"],
+  ["H06","레이메이 켑트","RAYMAY KEPT","writing","펜케이스·디자인 문구 — 일본 KEPT"],
+  ["H06","펜텔","PENTEL","writing","샤프·붓펜·사인펜 — 일본 필기구"],
+  ["H06","우디","WOODHI","writing","우드 일러스트 디자인 문구"],
+  ["J01","유니","UNI","writing","연필·젤펜·샤프 — 미쓰비시, 쿠루토가"],
+  ["J07","자크 허빈","JACQUES HERBIN","writing","만년필 잉크 — 프랑스 고급 잉크"],
+  ["L01","지구화학","GLOBE CHEMICAL","writing","잉크·필기 소모품"],
+  ["L03","클리펜","CLIPEN","writing","클립펜 — 종이에 꽂는 펜, MoMA 협업"],
   // COMMON
-  ["M01","네이버 라운지","NAVER LOUNGE","common"],
-  ["M02","리마스터드","REMASTERED","common"],
-  ["M03","레이어스투게더","LAYERS TOGETHER","common"],
-  ["M04","휴게공간","LOUNGE","common"],
+  ["M01","네이버 라운지","NAVER LOUNGE","common","공용 라운지 (브랜드 아님)"],
+  ["M02","리마스터드","REMASTERED","common","디자인 문구/굿즈"],
+  ["M03","레이어스투게더","LAYERS TOGETHER","common","디자인 문구/굿즈"],
+  ["M04","휴게공간","LOUNGE","common","공용 휴게공간"],
   // DAILY FINDS
-  ["A06","포인트오브뷰","POV","daily"],
-  ["B01","포인트오브뷰 × 헬로키티","POV × HELLO KITTY","daily"],
-  ["B04","댄스","THENCE","daily"],
-  ["B05","밋미","MEET ME","daily"],
-  ["D03","노빅딜","NOBIGDEAL","daily"],
-  ["E02","공예가","GONGYEGA","daily"],
-  ["F04","티에토아","TIETOA","daily"],
-  ["F05","키티버니포니","KITTY BUNNY PONY","daily"],
-  ["G04","오롤리데이","OH, LOLLY DAY!","daily"],
-  ["H03","유어마인드","YOUR-MIND","daily"],
-  ["H04","원모어백","ONEMOREBAG","daily"],
-  ["H08","세일러즈","SAILORS","daily"],
-  ["I04","오이뮤","OIMU","daily"],
-  ["J05","하우키즈풀","HOWKIDSFUL","daily"],
-  ["J06","프랑츠","FRANZ","daily"],
-  ["L07","서커스보이밴드","CIRCUS BOY BAND","daily"],
-  ["L08","트래블러스컴퍼니","TRAVELER'S COMPANY","daily"],
+  ["A06","포인트오브뷰","POV","daily","문구 편집숍 — 성수, 필기구+오브제 큐레이션"],
+  ["B01","포인트오브뷰 × 헬로키티","POV × HELLO KITTY","daily","POV × 헬로키티 콜라보 기획상품"],
+  ["B04","댄스","THENCE","daily","다이어리·다꾸·패션잡화"],
+  ["B05","밋미","MEET ME","daily","디자인 문구·스티커"],
+  ["D03","노빅딜","NOBIGDEAL","daily","IP 리빙·문구 — 디즈니/유니버설 라이선스"],
+  ["E02","공예가","GONGYEGA","daily","북커버·생활소품 — 핸드메이드 패브릭"],
+  ["F04","티에토아","TIETOA","daily","디자인 문구"],
+  ["F05","키티버니포니","KITTY BUNNY PONY","daily","패브릭·홈리빙 — 패턴 파우치·침구"],
+  ["G04","오롤리데이","OH, LOLLY DAY!","daily","행복 테마 디자인 문구·잡화"],
+  ["H03","유어마인드","YOUR-MIND","daily","독립출판·아트북 서점"],
+  ["H04","원모어백","ONEMOREBAG","daily","에코백·문구 — 스티커·마테·타로"],
+  ["H08","세일러즈","SAILORS","daily","스케줄러·노트백 — 밀레니얼 여성 타깃"],
+  ["I04","오이뮤","OIMU","daily","팔각성냥·향·디자인소품 — 전통 리디자인"],
+  ["J05","하우키즈풀","HOWKIDSFUL","daily","문구·가방·액세서리 — 키치 디자인"],
+  ["J06","프랑츠","FRANZ","daily","디자인 문구/소품"],
+  ["L07","서커스보이밴드","CIRCUS BOY BAND","daily","일러스트 문구·리빙 — 콜라주 일러스트"],
+  ["L08","트래블러스컴퍼니","TRAVELER'S COMPANY","daily","트래블러스 노트 — 일본 가죽 커버 리필 노트"],
   // PAPER
-  ["A01","두성종이","DOOSUNG PAPER","paper"],
-  ["A12","페이퍼테일러","PAPER TAILOR","paper"],
-  ["C04","그린디자인웍스 공장","GONGJANG","paper"],
-  ["C05","모스","MOHS","paper"],
-  ["C06","오첵","O-CHECK","paper"],
-  ["C08","한솔페이퍼 × 어반북스","HANSOL PAPER × URBANBOOKS","paper"],
-  ["C10","삼원페이퍼","SAMWON PAPER","paper"],
-  ["G02","비온뒤","BE ON D","paper"],
-  ["G05","웬아이워즈영","WHENIWASYOUNG","paper"],
-  ["H01","가위","KAWI","paper"],
-  ["I01","트롤스페이퍼","TROLLS PAPER","paper"],
-  ["I02","양지사","YANGJISA","paper"],
-  ["I03","소소문구","SOSOMOONGOO","paper"],
-  ["I05","페이퍼플레이트","PAPER PLATE","paper"],
-  ["I07","글월","GEULWOL","paper"],
-  ["J02","컴포지션 스튜디오","COMPOSITION STUDIO","paper"],
-  ["J04","몰스킨","MOLESKINE","paper"],
-  ["J11","로디아","RHODIA","paper"],
-  ["L02","페이퍼리안","PAPERIAN","paper"],
-  ["L02","더컴플리트리스트","THE COMPLETIST","paper"],
+  ["A01","두성종이","DOOSUNG PAPER","paper","특수지·팬시페이퍼 — 국내 대표 디자인 종이"],
+  ["A12","페이퍼테일러","PAPER TAILOR","paper","커스텀 노트 — 표지~제본~각인 맞춤"],
+  ["C04","그린디자인웍스 공장","GONGJANG","paper","다이어리·파일노트 — 친환경 종이 문구"],
+  ["C05","모스","MOHS","paper","노트·디자인 문구 — 모스그래픽"],
+  ["C06","오첵","O-CHECK","paper","다이어리·노트 — FSC 인증 감성 문구"],
+  ["C08","한솔페이퍼 × 어반북스","HANSOL PAPER × URBANBOOKS","paper","종이·노트 — 한솔×어반북스 콜라보"],
+  ["C10","삼원페이퍼","SAMWON PAPER","paper","특수지 — 삼원특수지 디자인 종이"],
+  ["G02","비온뒤","BE ON D","paper","다이어리·노트 — 감성 스테이셔너리"],
+  ["G05","웬아이워즈영","WHENIWASYOUNG","paper","노트·플래너 — 빈티지 우표 모티프"],
+  ["H01","가위","KAWI","paper","패턴 포장지·가위 — 선물 포장"],
+  ["I01","트롤스페이퍼","TROLLS PAPER","paper","노트·다이어리 — 무코팅 펄프 질감"],
+  ["I02","양지사","YANGJISA","paper","다이어리·달력 — 국내 다이어리 강자"],
+  ["I03","소소문구","SOSOMOONGOO","paper","노트·메모지·엽서 — 기록 테마"],
+  ["I05","페이퍼플레이트","PAPER PLATE","paper","디자인 캘린더·지류"],
+  ["I07","글월","GEULWOL","paper","편지지·펜팔 서비스 — 연희동 편지가게"],
+  ["J02","컴포지션 스튜디오","COMPOSITION STUDIO","paper","컴포지션 노트·만년필 노트"],
+  ["J04","몰스킨","MOLESKINE","paper","노트 — 이탈리아, 클래식 하드커버"],
+  ["J11","로디아","RHODIA","paper","메모패드 — 프랑스, 오렌지 블록"],
+  ["L02","페이퍼리안","PAPERIAN","paper","다이어리·6공 다이어리·노트"],
+  ["L02","더컴플리트리스트","THE COMPLETIST","paper","디자인 캘린더·플래너 — 컬러풀 그래픽 지류"],
   // OFFICE & DESK
-  ["B08","펜코","PENCO®","office"],
-  ["C01","로지텍","LOGITECH","office"],
-  ["C11","코쿠요","KOKUYO","office"],
-  ["D01/02","일룸","ILOOM","office"],
-  ["D05","워크인프로그래스","WIP","office"],
-  ["E06","바이하츠","BUYHEARTS","office"],
-  ["F02","매거진C","MAGAZINE C","office"],
-  ["G01","넬나","NELNA","office"],
-  ["I06","모트모트","MOTEMOTE","office"],
-  ["J08","프러스","PLUS","office"],
-  ["L02","크래프트디자인테크놀로지","CRAFT DESIGN TECHNOLOGY","office"],
-  ["L05","산로","SANRO","office"],
+  ["B08","펜코","PENCO®","office","빈티지 사무문구 — 일본 하이타이드"],
+  ["C01","로지텍","LOGITECH","office","마우스·키보드 — 데스크 디바이스"],
+  ["C11","코쿠요","KOKUYO","office","캠퍼스 노트·사무용품 — 일본 종합 문구"],
+  ["D01/02","일룸","ILOOM","office","책상·의자 가구 — 데스크 셋업"],
+  ["D05","워크인프로그래스","WIP","office","프리미엄 오피스 가구·데스크 도구 편집숍"],
+  ["E06","바이하츠","BUYHEARTS","office","날클립·스테이플러·클립 — 1983년 제조"],
+  ["F02","매거진C","MAGAZINE C","office","의자 다큐 매거진 — 매거진B 계열"],
+  ["G01","넬나","NELNA","office","디지털 플래너·타이머"],
+  ["I06","모트모트","MOTEMOTE","office","스터디 플래너 — 텐미닛 스터디플래너"],
+  ["J08","프러스","PLUS","office","수정테이프·가위·사무용품 — 일본"],
+  ["L02","크래프트디자인테크놀로지","CRAFT DESIGN TECHNOLOGY","office","디자인 사무문구 — 일본 미니멀 데스크"],
+  ["L05","산로","SANRO","office","메탈 데스크 소품 — 금속 가공 액세서리"],
   // KIOSK
-  ["K01","마크스","MARK'S","kiosk"],
-  ["K02","우이","OUIE","kiosk"],
-  ["K03","민도비또","MINDOBITTO","kiosk"],
-  ["K04","화랑","HWARANG","kiosk"],
-  ["K05","동키콘테","DONKY CONTÉ","kiosk"],
-  ["K06","안테리크","ANTERIQUE","kiosk"],
-  ["K07","수이과슈","SUI GOUACHE","kiosk"],
-  ["K08","냥냥빔","MEWMEWBEAM","kiosk"],
-  ["K09","노영원","NOH YONG-WON","kiosk"],
+  ["K01","마크스","MARK'S","kiosk","다이어리 — 일본, EDiT 플래너"],
+  ["K02","우이","OUIE","kiosk","디자인 문구/잡화"],
+  ["K03","민도비또","MINDOBITTO","kiosk","스티커·엽서·도자 — mindobi 굿즈"],
+  ["K04","화랑","HWARANG","kiosk","문방·미술 문구"],
+  ["K05","동키콘테","DONKY CONTÉ","kiosk","일러스트 작가 문구"],
+  ["K06","안테리크","ANTERIQUE","kiosk","초저점도 볼펜 — 일본, 마하볼 0.5mm"],
+  ["K07","수이과슈","SUI GOUACHE","kiosk","과슈 물감 — 국산 1호 과슈"],
+  ["K08","냥냥빔","MEWMEWBEAM","kiosk","빈티지 스티커·마테·우표 — 여행 문구"],
+  ["K09","노영원","NOH YONG-WON","kiosk","일러스트 작가 굿즈"],
 ];
 
 const HALL_ORDER = ["A","B","C","D","E","F","G","H","I","J","K","L","M"];
@@ -325,6 +342,8 @@ let favOnly = false;
 let routeMode = false; // 맞춤 추천 결과 보기 모드
 let recoLineup = [];   // 퀴즈로 뽑힌 부스(순서대로)
 let query = "";
+let openInfo = new Set(); // 주력 아이템 펼친 카드(id 기준)
+let focusBooth = null;    // 맵에서 강조 중인 부스번호
 
 // 해외 유명 브랜드 (브랜드 취향 점수용)
 const GLOBAL = new Set([
@@ -420,7 +439,7 @@ function onErr(e){
 // 지금 선택한 부스 카드를 기준점으로 현재 GPS와 묶어 저장
 function calibrateHere(){
   if(!lastPos){ alert("GPS 신호를 받는 중이에요. 잠시 후 다시 눌러주세요."); return; }
-  if(!currentLoc || !COORDS[currentLoc]){ alert("먼저 지금 서 있는 부스 카드를 탭해서 선택하세요."); return; }
+  if(!currentLoc || !COORDS[currentLoc]){ alert("먼저 지금 서 있는 부스 카드를 펼쳐 '📍 여기서 출발'을 눌러 현위치로 지정하세요."); return; }
   if(geoAnchors.some(a=>a.booth===currentLoc)){ alert("이미 보정한 부스예요. 다른 부스로 이동해서 보정하세요."); return; }
   const [px,py]=COORDS[currentLoc];
   geoAnchors.push({lat:lastPos.lat,lon:lastPos.lon,px,py,booth:currentLoc});
@@ -441,7 +460,7 @@ function updateGpsUI(){
   const accTxt=lastPos?`GPS ±${Math.round(lastPos.acc)}m`:"GPS 신호 받는 중…";
   let s="";
   if(n<2){
-    s=`<span class="gpsmsg">📍 ${accTxt} · 보정 ${n}/2 — 지금 서 있는 부스 카드를 탭한 뒤 아래 버튼을 누르세요. 두 곳을 보정하면 실시간 위치가 잡혀요.</span>`+
+    s=`<span class="gpsmsg">📍 ${accTxt} · 보정 ${n}/2 — 지금 서 있는 부스 카드를 펼쳐 '📍 여기서 출발'을 누른 뒤 아래 버튼을 누르세요. 두 곳을 보정하면 실시간 위치가 잡혀요.</span>`+
       `<button id="gpsCal">📌 여기서 보정 (${n+1}/2)</button>`+
       `<button id="gpsOff" class="ghost">끄기</button>`;
   }else{
@@ -589,6 +608,25 @@ function setHereDot(){
   } else g.style.display="none";
 }
 
+// 카드 펼친 부스를 맵에서 펄스로 강조
+function setHighlight(){
+  const g=$("#hiBooth");
+  if(focusBooth && COORDS[focusBooth]){
+    const [x,y]=COORDS[focusBooth];
+    g.setAttribute("transform",`translate(${x},${y})`);
+    g.style.display="";
+  } else g.style.display="none";
+}
+// 강조 부스가 맵 가로 스크롤 중앙에 오도록 이동
+function scrollMapToBooth(num){
+  const p=COORDS[num]; if(!p) return;
+  const img=mapScroll.querySelector("img");
+  const w=img.clientWidth, view=mapScroll.clientWidth;
+  if(w-view<8) return; // 맵이 다 보이면 스크롤 불필요
+  const target=(p[0]/2835)*w - view/2;
+  mapScroll.scrollTo({left:Math.max(0,Math.min(target,w-view)),behavior:"smooth"});
+}
+
 function id(b){ return b[0]+"|"+b[2]; }
 function saveFavs(){ localStorage.setItem(KEY, JSON.stringify([...favs])); $("#favCount").textContent = favs.size; }
 
@@ -650,8 +688,8 @@ function render(){
     $("#routeNote").innerHTML = `<b>🎯 맞춤 동선 ${list.length}곳</b> — 취향 기준으로 골랐어요. 입구에서 번호 순서대로 따라가면 한 방향으로 돌아요. ★는 놓치면 아쉬운 곳. 다시 뽑으려면 위 <b>🎯 맞춤 추천</b> 버튼을 다시 탭.`;
   } else if(favOnly){
     $("#routeNote").innerHTML = currentLoc
-      ? `<b>📍 현위치: ${currentLoc}</b> 기준 동선. 파란 점에서 출발해 번호 순서대로 도세요. 다른 카드를 탭하면 현위치 변경, ${currentLoc} 다시 탭하면 해제.`
-      : `<b>내가 고른 부스 동선</b> — 위 맵에 번호 순서로 표시돼요. <b>지금 서 있는 부스 카드를 탭하면</b> 그 자리(📍)에서 출발하는 동선으로 바뀌어요.`;
+      ? `<b>📍 현위치: ${currentLoc}</b> 기준 동선. 파란 점에서 출발해 번호 순서대로 도세요. 카드를 펼쳐 <b>📍 여기서 출발</b>을 누르면 현위치 변경.`
+      : `<b>내가 고른 부스 동선</b> — 위 맵에 번호 순서로 표시돼요. <b>지금 서 있는 부스 카드를 펼쳐 📍 여기서 출발</b>을 누르면 그 자리에서 출발하는 동선으로 바뀌어요.`;
   }
   grid.innerHTML="";
   let stop=0;
@@ -660,7 +698,7 @@ function render(){
   if(!list.length){
     grid.innerHTML = `<div class="empty">${favOnly?"아직 저장한 부스가 없어요.<br>카드의 ★를 눌러 동선을 만들어보세요.":"검색 결과가 없어요."}</div>`;
     if(favOnly) setCustomRoute([]); else setRecoRoute();
-    setHereDot();
+    setHereDot(); setHighlight();
     return;
   }
 
@@ -675,34 +713,52 @@ function render(){
       grid.appendChild(h);
     }
     const c=CATS[b[3]];
+    const oid=id(b);
+    const isOpen=openInfo.has(oid);
+    const isHere=currentLoc===b[0];
     const card=document.createElement("div");
-    card.className="card"+(currentLoc===b[0]?" here":"");
+    card.className="card"+(isHere?" here":"")+(isOpen?" open":"");
     card.style.setProperty("--c",c.color);
-    const on=favs.has(id(b));
-    const isPick=PICKS.has(id(b));
+    const on=favs.has(oid);
+    const isPick=PICKS.has(oid);
     let extra="";
     if(routeMode||favOnly){ stop++; extra=`<div class="num">${stop}</div>`; if(routeMode&&isPick) extra+=`<div class="pick">★ MUST</div>`; }
     if(favOnly||routeMode) routeNums.push(b[0]);
-    if(currentLoc===b[0]) extra+=`<div class="here-tag">📍 지금</div>`;
+    if(isHere) extra+=`<div class="here-tag">📍 지금</div>`;
     card.innerHTML=`
       <button class="star${on?" on":""}" aria-label="저장">${on?"★":"☆"}</button>
       <div class="booth">${b[0]}</div>
       <div class="ko">${b[1]}</div>
       <div class="en">${b[2]}</div>
-      <div class="cat">${c.name}</div>${extra}`;
+      <div class="cat">${c.name}</div>
+      <div class="more">${isOpen?"접기 ▴":"주력 아이템 ▾"}</div>
+      <div class="info"><div class="item">${b[4]||"정보 준비중"}</div>
+        <button class="locbtn">${isHere?"📍 현위치 해제":"📍 여기서 출발(현위치)"}</button></div>${extra}`;
     card.querySelector(".star").onclick=(e)=>{
       e.stopPropagation();
-      const k=id(b);
-      if(favs.has(k)) favs.delete(k); else favs.add(k);
+      if(favs.has(oid)) favs.delete(oid); else favs.add(oid);
       saveFavs(); render();
     };
-    card.onclick=()=>{ currentLoc = (currentLoc===b[0]) ? null : b[0]; render(); };
+    card.querySelector(".locbtn").onclick=(e)=>{
+      e.stopPropagation();
+      currentLoc = isHere ? null : b[0];
+      render();
+    };
+    card.onclick=()=>{
+      if(openInfo.has(oid)){ openInfo.delete(oid); if(focusBooth===b[0]) focusBooth=null; }
+      else { openInfo.add(oid); focusBooth=b[0]; }
+      render();
+      if(focusBooth===b[0]){
+        scrollMapToBooth(b[0]);
+        document.querySelector(".mapsec").scrollIntoView({behavior:"smooth",block:"start"});
+      }
+    };
     grid.appendChild(card);
   }
 
   if(favOnly||routeMode){ $("#routeSvg").classList.remove("hide"); $("#routeToggle").textContent="동선 끄기"; setCustomRoute(routeNums); }
   else setRecoRoute();
-  setHereDot();
+  setHereDot(); setHighlight();
 }
 
 $("#search").addEventListener("input",e=>{
