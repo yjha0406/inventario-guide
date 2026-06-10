@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>인벤타리오 2026 부스 가이드</title>
+<style>
+  :root{
+    --bg:#f5f3ee; --card:#ffffff; --ink:#222; --sub:#777; --line:#e6e2d8;
+    --small:#e9a23b; --workshop:#7b9e6b; --writing:#5b8fd6; --common:#9a9a9a;
+    --daily:#e07a5f; --paper:#c77bb0; --office:#444; --kiosk:#3aa17e;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.5}
+  header{padding:22px 16px 14px;background:#1f1d1a;color:#fff;position:sticky;top:0;z-index:30}
+  header .badge{display:inline-block;font-size:11px;letter-spacing:.18em;color:#e9a23b;font-weight:700;margin-bottom:6px}
+  header h1{margin:0;font-size:21px;font-weight:800;letter-spacing:-.02em}
+  header .meta{margin-top:5px;font-size:12.5px;color:#bbb}
+  .toolbar{position:sticky;top:0;z-index:20;background:var(--bg);padding:12px 16px 6px;border-bottom:1px solid var(--line)}
+  .searchwrap{position:relative}
+  #search{width:100%;padding:11px 38px 11px 14px;border:1.5px solid var(--line);border-radius:12px;
+    font-size:15px;background:#fff;outline:none}
+  #search:focus{border-color:#1f1d1a}
+  #clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:#e6e2d8;
+    width:26px;height:26px;border-radius:50%;font-size:14px;cursor:pointer;display:none;color:#555}
+  .rowbtns{display:flex;gap:8px;margin-top:10px}
+  .rowbtns button{flex:1;padding:9px;border:1.5px solid var(--line);background:#fff;border-radius:10px;
+    font-size:13px;font-weight:600;cursor:pointer;color:#444}
+  .rowbtns button.on{background:#1f1d1a;color:#fff;border-color:#1f1d1a}
+  .chips{display:flex;gap:7px;overflow-x:auto;padding:10px 16px 12px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 auto;padding:7px 13px;border-radius:20px;font-size:12.5px;font-weight:600;
+    border:1.5px solid var(--line);background:#fff;cursor:pointer;white-space:nowrap;color:#555}
+  .chip.on{color:#fff;border-color:transparent}
+  .count{padding:2px 16px 4px;font-size:12px;color:var(--sub)}
+  .grid{padding:6px 12px 90px;display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  @media(min-width:560px){.grid{grid-template-columns:1fr 1fr 1fr}}
+  @media(min-width:820px){.grid{grid-template-columns:1fr 1fr 1fr 1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:11px 11px 12px;
+    position:relative;display:flex;flex-direction:column;gap:3px;overflow:hidden}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+  .card .booth{font-size:11px;font-weight:800;color:var(--c);letter-spacing:.04em}
+  .card .ko{font-size:14.5px;font-weight:700;letter-spacing:-.01em;padding-right:18px}
+  .card .en{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.02em}
+  .card .cat{margin-top:5px;font-size:10px;color:#999;font-weight:600}
+  .star{position:absolute;top:8px;right:8px;font-size:18px;cursor:pointer;line-height:1;color:#d9d4c7;
+    background:none;border:none;padding:2px}
+  .star.on{color:#f0a92b}
+  .num{position:absolute;bottom:8px;right:8px;min-width:22px;height:22px;border-radius:11px;
+    background:#1f1d1a;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;
+    justify-content:center;padding:0 5px}
+  .pick{position:absolute;top:8px;left:8px;font-size:10px;background:#f0a92b;color:#1f1d1a;
+    font-weight:800;padding:2px 5px;border-radius:5px;letter-spacing:.02em}
+  #routeNote{margin-top:9px;font-size:12.5px;color:#555;background:#fff7e8;border:1px solid #f0d8a8;
+    border-radius:10px;padding:9px 11px;line-height:1.45;display:none}
+  #routeNote b{color:#b5781a}
+  .hall{grid-column:1/-1;margin:14px 4px 2px;font-size:12px;font-weight:800;color:#999;letter-spacing:.05em}
+  .empty{grid-column:1/-1;text-align:center;color:var(--sub);padding:50px 20px;font-size:14px}
+  footer{text-align:center;font-size:11px;color:#aaa;padding:0 20px 40px}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 14px;padding:0 16px 14px}
+  .legend span{font-size:11px;color:#666;display:flex;align-items:center;gap:4px}
+  .legend i{width:9px;height:9px;border-radius:2px;display:inline-block}
+  .mapsec{background:#1f1d1a;padding:8px 0 4px}
+  .maphint{color:#bbb;font-size:11px;padding:0 16px 6px;display:flex;justify-content:space-between;align-items:center}
+  .maphint button{background:#3a3733;color:#eee;border:none;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer}
+  .mapscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:0 16px}
+  .mapinner{position:relative;display:inline-block;border-radius:8px;overflow:hidden}
+  .mapscroll img{height:230px;width:auto;max-width:none;display:block;cursor:zoom-in;transition:height .2s}
+  .mapscroll.big img{height:560px;cursor:zoom-out}
+  svg.route{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+  svg.route.hide{display:none}
+  .card.here{outline:2px solid #2f6fed;outline-offset:-2px}
+  .here-tag{position:absolute;bottom:8px;left:8px;font-size:9.5px;background:#2f6fed;color:#fff;
+    font-weight:800;padding:2px 6px;border-radius:5px;letter-spacing:.02em}
+</style>
+</head>
+<body>
+<header>
+  <div class="badge">INVENTARIO 2026</div>
+  <h1>인벤타리오 부스 가이드</h1>
+  <div class="meta">PLATZ HALL 1 · HALL 2 · LOUNGE — 가고 싶은 부스는 ★ 눌러 저장</div>
+</header>
+
+<div class="mapsec">
+  <div class="maphint">
+    <span>← 좌우로 밀어 보기 · 빨간선이 추천 동선</span>
+    <span style="display:flex;gap:6px">
+      <button id="routeToggle">동선 끄기</button>
+      <button id="mapZoom">확대 ⤢</button>
+    </span>
+  </div>
+  <div class="mapscroll" id="mapScroll">
+    <div class="mapinner">
+      <img src="map.png" alt="인벤타리오 부스 배치도">
+      <svg class="route" id="routeSvg" viewBox="0 0 2835 1969" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <marker id="arw" markerWidth="5" markerHeight="5" refX="2.6" refY="2.5" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L5,2.5 L0,5 Z" fill="#e6332a"></path>
+          </marker>
+        </defs>
+        <path id="routeHalo" d="" fill="none" stroke="#ffffff" stroke-width="26" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"></path>
+        <path id="routeLine" d="" fill="none" stroke="#e6332a" stroke-width="13" stroke-linejoin="round" stroke-linecap="round"
+              marker-mid="url(#arw)" marker-end="url(#arw)"></path>
+        <g id="routeStops"></g>
+        <g id="startTag" font-family="sans-serif" font-weight="800" text-anchor="middle">
+          <circle cx="935" cy="790" r="19" fill="#1f9d55" stroke="#fff" stroke-width="5"></circle>
+          <rect x="858" y="808" width="154" height="44" rx="8" fill="#1f9d55"></rect>
+          <text x="935" y="839" font-size="29" fill="#fff">입구 IN</text>
+          <circle cx="2110" cy="790" r="19" fill="#e6332a" stroke="#fff" stroke-width="5"></circle>
+          <rect x="2033" y="808" width="154" height="44" rx="8" fill="#e6332a"></rect>
+          <text x="2110" y="839" font-size="29" fill="#fff">출구 OUT</text>
+        </g>
+        <g id="hereDot" style="display:none">
+          <circle r="40" fill="#2f6fed" opacity="0.22"><animate attributeName="r" values="22;46;22" dur="1.4s" repeatCount="indefinite"></animate></circle>
+          <circle r="16" fill="#2f6fed" stroke="#fff" stroke-width="5"></circle>
+          <rect x="-66" y="22" width="132" height="40" rx="8" fill="#2f6fed"></rect>
+          <text x="0" y="50" font-size="28" font-weight="800" fill="#fff" text-anchor="middle" font-family="sans-serif">현위치</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="searchwrap">
+    <input id="search" type="text" placeholder="브랜드·부스번호 검색 (예: 오롤리, A06, mt)" autocomplete="off">
+    <button id="clear" aria-label="지우기">×</button>
+  </div>
+  <div class="rowbtns">
+    <button id="allBtn" class="on">전체</button>
+    <button id="routeBtn">🗺️ 추천 동선</button>
+    <button id="favBtn">★ 내 동선 <span id="favCount">0</span></button>
+  </div>
+  <div id="routeNote"></div>
+</div>
+
+<div class="chips" id="chips"></div>
+<div class="legend" id="legend"></div>
+<div class="count" id="count"></div>
+<div class="grid" id="grid"></div>
+<footer>★ 표시는 이 기기에 저장돼요 (브라우저 닫아도 유지)</footer>
+
+<script>
+const CATS = {
+  small:   {name:"SMALL THING",       color:"#e9a23b"},
+  workshop:{name:"WORKSHOP & SHOWCASE",color:"#7b9e6b"},
+  writing: {name:"WRITING & DRAWING",  color:"#5b8fd6"},
+  common:  {name:"COMMON",             color:"#9a9a9a"},
+  daily:   {name:"DAILY FINDS",        color:"#e07a5f"},
+  paper:   {name:"PAPER",              color:"#c77bb0"},
+  office:  {name:"OFFICE & DESK",      color:"#444444"},
+  kiosk:   {name:"KIOSK",              color:"#3aa17e"},
+};
+
+const BOOTHS = [
+  // SMALL THING
+  ["A02","mt × 롤드페인트","mt × rolledpaint","small"],
+  ["B02","리마 리마","LIMPA LIMPA","small"],
+  ["B03","후르츠후라이","FRUITFRIES","small"],
+  ["B06","이와코","IWAKO","small"],
+  ["C03","하우폴리소클럽","HWF.RISOCLUB","small"],
+  ["E03","구버","GOOBER","small"],
+  ["E05","미시아","MICIA","small"],
+  ["E05","리라","LYRA","small"],
+  ["F01","라이프앤피시스","LIFE&PIECES","small"],
+  ["F03","이로하","IROHA","small"],
+  ["F07","플래그","FLAGG","small"],
+  ["F08","썸무드디자인","SOME MOOD DESIGN","small"],
+  ["F09","보키","BOKI","small"],
+  ["G03","수키도키","SUKEYDOKEY","small"],
+  ["G06","아무개씨","AHMUGAE_C","small"],
+  ["G07","산비","SANBI","small"],
+  ["H02","공일","0.1","small"],
+  ["H05","미니모니","MINIMONI","small"],
+  ["H06","히토토키","HITOTOKI","small"],
+  ["H07","프레젠트프레젠트","PRESENT PRESENT","small"],
+  ["H09","키오스크키오스크","KIOSKKIOSK","small"],
+  ["I08","리틀템포디자인","LITTLE TEMPO DESIGN","small"],
+  ["I09","아이코닉","ICONIC","small"],
+  ["J03","프렐류드스튜디오","PRELUDE STUDIO","small"],
+  ["J09","낫낫네버","NO NOT NEVER","small"],
+  ["J10","풀풀","PULPUL","small"],
+  ["L02","라이플페이퍼","RIFLE PAPER CO.","small"],
+  ["L04","지에이","GEEHEY","small"],
+  ["L06","슈아뜰리에","SUATELIER","small"],
+  // WORKSHOP & SHOWCASE
+  ["A07","더한글","THE HANGEUL","workshop"],
+  ["B07","서울디자인재단 × 서울스티커삼","SEOUL DESIGN FOUNDATION","workshop"],
+  ["C07","파티","PaTI","workshop"],
+  ["C09","삼원페이퍼 워크숍","SAMWON PAPER WORKSHOP","workshop"],
+  ["D04","키오스크키오스크 문구클럽 & 워크숍","KIOSKKIOSK MUNGU CLUB & WORKSHOP","workshop"],
+  ["L09","트래블러스컴퍼니 워크숍","TRAVELER'S COMPANY WORKSHOP","workshop"],
+  // WRITING & DRAWING
+  ["A03","파버카스텔","FABER-CASTELL","writing"],
+  ["A04","카키모리","KAKIMORI","writing"],
+  ["A05","흑심","BLACKHEART","writing"],
+  ["A08","카렌다쉬","CARAN D'ACHE","writing"],
+  ["A09","세일러","SAILOR","writing"],
+  ["A10","쉴드컬러스","SHIELDCOLORS","writing"],
+  ["A11","코픽","COPIC","writing"],
+  ["C02","글일다","WEARINGEUL","writing"],
+  ["E01","도미넌트인더스트리","DOMINANT INDUSTRY","writing"],
+  ["E04","한국파이로트","KOREA PILOT","writing"],
+  ["F06","제브라","ZEBRA","writing"],
+  ["H06","레이메이 켑트","RAYMAY KEPT","writing"],
+  ["H06","펜텔","PENTEL","writing"],
+  ["H06","우디","WOODHI","writing"],
+  ["J01","유니","UNI","writing"],
+  ["J07","자크 허빈","JACQUES HERBIN","writing"],
+  ["L01","지구화학","GLOBE CHEMICAL","writing"],
+  ["L03","클리펜","CLIPEN","writing"],
+  // COMMON
+  ["M01","네이버 라운지","NAVER LOUNGE","common"],
+  ["M02","리마스터드","REMASTERED","common"],
+  ["M03","레이어스투게더","LAYERS TOGETHER","common"],
+  ["M04","휴게공간","LOUNGE","common"],
+  // DAILY FINDS
+  ["A06","포인트오브뷰","POV","daily"],
+  ["B01","포인트오브뷰 × 헬로키티","POV × HELLO KITTY","daily"],
+  ["B04","댄스","THENCE","daily"],
+  ["B05","밋미","MEET ME","daily"],
+  ["D03","노빅딜","NOBIGDEAL","daily"],
+  ["E02","공예가","GONGYEGA","daily"],
+  ["F04","티에토아","TIETOA","daily"],
+  ["F05","키티버니포니","KITTY BUNNY PONY","daily"],
+  ["G04","오롤리데이","OH, LOLLY DAY!","daily"],
+  ["H03","유어마인드","YOUR-MIND","daily"],
+  ["H04","원모어백","ONEMOREBAG","daily"],
+  ["H08","세일러즈","SAILORS","daily"],
+  ["I04","오이뮤","OIMU","daily"],
+  ["J05","하우키즈풀","HOWKIDSFUL","daily"],
+  ["J06","프랑츠","FRANZ","daily"],
+  ["L07","서커스보이밴드","CIRCUS BOY BAND","daily"],
+  ["L08","트래블러스컴퍼니","TRAVELER'S COMPANY","daily"],
+  // PAPER
+  ["A01","두성종이","DOOSUNG PAPER","paper"],
+  ["A12","페이퍼테일러","PAPER TAILOR","paper"],
+  ["C04","그린디자인웍스 공장","GONGJANG","paper"],
+  ["C05","모스","MOHS","paper"],
+  ["C06","오첵","O-CHECK","paper"],
+  ["C08","한솔페이퍼 × 어반북스","HANSOL PAPER × URBANBOOKS","paper"],
+  ["C10","삼원페이퍼","SAMWON PAPER","paper"],
+  ["G02","비온뒤","BE ON D","paper"],
+  ["G05","웬아이워즈영","WHENIWASYOUNG","paper"],
+  ["H01","가위","KAWI","paper"],
+  ["I01","트롤스페이퍼","TROLLS PAPER","paper"],
+  ["I02","양지사","YANGJISA","paper"],
+  ["I03","소소문구","SOSOMOONGOO","paper"],
+  ["I05","페이퍼플레이트","PAPER PLATE","paper"],
+  ["I07","글월","GEULWOL","paper"],
+  ["J02","컴포지션 스튜디오","COMPOSITION STUDIO","paper"],
+  ["J04","몰스킨","MOLESKINE","paper"],
+  ["J11","로디아","RHODIA","paper"],
+  ["L02","페이퍼리안","PAPERIAN","paper"],
+  ["L02","더컴플리트리스트","THE COMPLETIST","paper"],
+  // OFFICE & DESK
+  ["B08","펜코","PENCO®","office"],
+  ["C01","로지텍","LOGITECH","office"],
+  ["C11","코쿠요","KOKUYO","office"],
+  ["D01/02","일룸","ILOOM","office"],
+  ["D05","워크인프로그래스","WIP","office"],
+  ["E06","바이하츠","BUYHEARTS","office"],
+  ["F02","매거진C","MAGAZINE C","office"],
+  ["G01","넬나","NELNA","office"],
+  ["I06","모트모트","MOTEMOTE","office"],
+  ["J08","프러스","PLUS","office"],
+  ["L02","크래프트디자인테크놀로지","CRAFT DESIGN TECHNOLOGY","office"],
+  ["L05","산로","SANRO","office"],
+  // KIOSK
+  ["K01","마크스","MARK'S","kiosk"],
+  ["K02","우이","OUIE","kiosk"],
+  ["K03","민도비또","MINDOBITTO","kiosk"],
+  ["K04","화랑","HWARANG","kiosk"],
+  ["K05","동키콘테","DONKY CONTÉ","kiosk"],
+  ["K06","안테리크","ANTERIQUE","kiosk"],
+  ["K07","수이과슈","SUI GOUACHE","kiosk"],
+  ["K08","냥냥빔","MEWMEWBEAM","kiosk"],
+  ["K09","노영원","NOH YONG-WON","kiosk"],
+];
+
+const HALL_ORDER = ["A","B","C","D","E","F","G","H","I","J","K","L","M"];
+const KEY = "inventario_favs";
+let favs = new Set(JSON.parse(localStorage.getItem(KEY) || "[]"));
+let activeCat = "all";
+let favOnly = false;
+let routeMode = false;
+let query = "";
+
+// 헤이즐 집중 카테고리
+const ROUTE_CATS = new Set(["small","daily","office"]);
+// 시간 부족 시 우선 — MUST-SEE
+const PICKS = new Set([
+  "A02|mt × rolledpaint","A06|POV","B08|PENCO®","C11|KOKUYO",
+  "F02|MAGAZINE C","G04|OH, LOLLY DAY!","H03|YOUR-MIND","H06|HITOTOKI",
+  "H09|KIOSKKIOSK","I04|OIMU","I06|MOTEMOTE","J06|FRANZ","J08|PLUS",
+  "L02|CRAFT DESIGN TECHNOLOGY","L06|SUATELIER","L08|TRAVELER'S COMPANY"
+]);
+
+// 부스번호 → 맵 픽셀 좌표(viewBox 2835×1969 기준)
+const COORDS = {
+  A01:[340,703],A02:[435,703],A03:[515,703],A04:[595,703],A05:[675,703],A06:[765,703],
+  A07:[765,597],A08:[675,597],A09:[595,597],A10:[515,597],A11:[435,597],A12:[340,597],
+  B01:[940,703],B02:[1033,703],B03:[1110,703],B04:[1190,703],B05:[1270,703],
+  B06:[1150,597],B07:[1033,597],B08:[940,597],
+  C01:[340,453],C02:[515,412],C03:[765,453],C04:[765,372],C05:[765,280],C06:[675,280],
+  C07:[595,280],C08:[515,280],C09:[435,280],C10:[340,280],C11:[340,372],
+  D01:[940,453],D02:[1110,412],D03:[1270,280],D04:[1110,280],D05:[940,295],"D01/02":[1025,440],
+  E01:[1745,330],E02:[1825,295],E03:[1905,295],E04:[1990,330],E05:[1878,365],E06:[1798,365],
+  F01:[2190,330],F02:[2273,295],F03:[2330,295],F04:[2387,295],F05:[2468,295],F06:[2573,330],F07:[2493,367],F08:[2403,367],F09:[2300,367],
+  G01:[1745,487],G02:[1827,450],G03:[1905,450],G04:[1990,487],G05:[1913,520],G06:[1850,520],G07:[1798,520],
+  H01:[2190,487],H02:[2303,450],H03:[2368,450],H04:[2423,450],H05:[2493,450],H06:[2573,487],H07:[2493,520],H08:[2413,520],H09:[2300,520],
+  I01:[1745,640],I02:[1827,605],I03:[1905,605],I04:[1990,640],I05:[1905,677],I06:[1825,677],I07:[1745,765],I08:[1798,765],I09:[1920,765],
+  J01:[2190,640],J02:[2273,605],J03:[2360,605],J04:[2468,605],J05:[2573,640],J06:[2493,677],J07:[2403,677],J08:[2298,677],J09:[2138,765],J10:[2245,765],J11:[2443,765],
+  K01:[1655,683],K02:[1655,632],K03:[1655,487],K04:[1655,353],K05:[1655,302],K06:[1937,217],K07:[2000,217],K08:[2558,217],K09:[2607,217],
+  L01:[2702,712],L02:[2702,605],L03:[2702,525],L04:[2702,415],L05:[2702,285],L06:[2460,215],L07:[2385,215],L08:[2190,215],L09:[2175,115],
+  M01:[1475,475],M02:[1810,215],M03:[172,650],M04:[2385,115]
+};
+// 입구 2 · 출구 2 (재입장 가능) — 동선 시작=가까운 입구, 끝=가까운 출구
+const ENTRANCES = [[935,790],[1490,790]];
+const EXITS = [[298,790],[2110,790]];
+const RECO_D = "M935,790 L1380,735 L1100,651 L555,651 L555,370 L1110,370 L1110,250 L1865,250 L1865,330 L1865,490 L1865,645 L2350,660 L2380,490 L2380,330 L2702,300 L2702,720 L2110,790";
+let currentLoc = null; // 현위치로 지정한 부스번호
+
+function nearest(list,t){ let best=list[0],bd=Infinity; for(const p of list){const dx=p[0]-t[0],dy=p[1]-t[1],dd=dx*dx+dy*dy; if(dd<bd){bd=dd;best=p;}} return best; }
+
+const $ = s => document.querySelector(s);
+const grid = $("#grid"), countEl = $("#count");
+
+function ptOf(num){ return COORDS[num] || null; }
+
+// 추천 동선(고정) 표시
+function setRecoRoute(){
+  $("#routeHalo").setAttribute("d",RECO_D);
+  $("#routeLine").setAttribute("d",RECO_D);
+  $("#routeStops").innerHTML="";
+  $("#startTag").style.display="";
+}
+
+// 선택 부스 기반 동선 (시작=현위치 또는 가까운 입구, 끝=가까운 출구)
+function setCustomRoute(orderedNums){
+  const stopsG=$("#routeStops");
+  $("#startTag").style.display="none";
+  const stops=[]; const seen=new Set();
+  orderedNums.forEach(n=>{
+    if(currentLoc && n===currentLoc) return;
+    if(seen.has(n)) return; seen.add(n);
+    const p=COORDS[n]; if(p) stops.push(p);
+  });
+  if(!stops.length){
+    $("#routeHalo").setAttribute("d","");
+    $("#routeLine").setAttribute("d","");
+    stopsG.innerHTML=""; return;
+  }
+  const useHere = currentLoc && COORDS[currentLoc];
+  const start = useHere ? COORDS[currentLoc] : nearest(ENTRANCES, stops[0]);
+  const end = nearest(EXITS, stops[stops.length-1]);
+  const pts=[start,...stops,end];
+  const d="M"+pts.map(p=>p[0]+","+p[1]).join(" L");
+  $("#routeHalo").setAttribute("d",d);
+  $("#routeLine").setAttribute("d",d);
+  let h="";
+  stops.forEach((p,i)=>{
+    h+=`<circle cx="${p[0]}" cy="${p[1]}" r="18" fill="#e6332a" stroke="#fff" stroke-width="4"></circle>`+
+       `<text x="${p[0]}" y="${p[1]+9}" font-size="25" font-weight="800" fill="#fff" text-anchor="middle" font-family="sans-serif">${i+1}</text>`;
+  });
+  if(!useHere){
+    h+=`<circle cx="${start[0]}" cy="${start[1]}" r="19" fill="#1f9d55" stroke="#fff" stroke-width="5"></circle>`+
+       `<rect x="${start[0]-77}" y="${start[1]+18}" width="154" height="44" rx="8" fill="#1f9d55"></rect>`+
+       `<text x="${start[0]}" y="${start[1]+49}" font-size="29" font-weight="800" fill="#fff" text-anchor="middle" font-family="sans-serif">입구 IN</text>`;
+  }
+  h+=`<circle cx="${end[0]}" cy="${end[1]}" r="19" fill="#e6332a" stroke="#fff" stroke-width="5"></circle>`+
+     `<rect x="${end[0]-77}" y="${end[1]+18}" width="154" height="44" rx="8" fill="#e6332a"></rect>`+
+     `<text x="${end[0]}" y="${end[1]+49}" font-size="29" font-weight="800" fill="#fff" text-anchor="middle" font-family="sans-serif">출구 OUT</text>`;
+  stopsG.innerHTML=h;
+}
+
+// 현위치 파란 점
+function setHereDot(){
+  const g=$("#hereDot");
+  if(currentLoc && COORDS[currentLoc]){
+    const [x,y]=COORDS[currentLoc];
+    g.setAttribute("transform",`translate(${x},${y})`);
+    g.style.display="";
+  } else g.style.display="none";
+}
+
+function id(b){ return b[0]+"|"+b[2]; }
+function saveFavs(){ localStorage.setItem(KEY, JSON.stringify([...favs])); $("#favCount").textContent = favs.size; }
+
+function buildChips(){
+  const wrap = $("#chips");
+  const mk = (key,label,color)=>{
+    const c=document.createElement("div");
+    c.className="chip"+(activeCat===key?" on":"");
+    c.textContent=label;
+    if(activeCat===key && color) c.style.background=color;
+    c.onclick=()=>{ activeCat=key; favOnly=false; routeMode=false; syncBtns(); render(); };
+    return c;
+  };
+  wrap.innerHTML="";
+  wrap.appendChild(mk("all","전체"));
+  for(const k in CATS) wrap.appendChild(mk(k,CATS[k].name,CATS[k].color));
+}
+
+function buildLegend(){
+  const l=$("#legend"); l.innerHTML="";
+  for(const k in CATS){
+    const s=document.createElement("span");
+    s.innerHTML=`<i style="background:${CATS[k].color}"></i>${CATS[k].name}`;
+    l.appendChild(s);
+  }
+}
+
+function syncBtns(){
+  $("#allBtn").classList.toggle("on",!favOnly && !routeMode);
+  $("#routeBtn").classList.toggle("on",routeMode);
+  $("#favBtn").classList.toggle("on",favOnly);
+  $("#routeNote").style.display = (routeMode||favOnly) ? "block" : "none";
+}
+
+function render(){
+  buildChips();
+  let list = BOOTHS.filter(b=>{
+    if(routeMode && !ROUTE_CATS.has(b[3])) return false;
+    if(favOnly && !favs.has(id(b))) return false;
+    if(!favOnly && !routeMode && activeCat!=="all" && b[3]!==activeCat) return false;
+    if(query){
+      const q=query.toLowerCase();
+      if(!(b[0].toLowerCase().includes(q) || b[1].toLowerCase().includes(q) || b[2].toLowerCase().includes(q))) return false;
+    }
+    return true;
+  });
+
+  list.sort((a,b)=>{
+    const ha=HALL_ORDER.indexOf(a[0][0]), hb=HALL_ORDER.indexOf(b[0][0]);
+    if(ha!==hb) return ha-hb;
+    return a[0].localeCompare(b[0],undefined,{numeric:true});
+  });
+
+  countEl.textContent = favOnly ? `내 동선 ${list.length}곳` : (routeMode ? `동선 ${list.length}곳 · ★표시는 시간 부족 시 우선` : `${list.length}개 부스`);
+  if(routeMode){
+    $("#routeNote").innerHTML = `<b>3~4시간 동선</b> — HALL 2(A·B·C·D열) 먼저 쓸고 라운지 건너 HALL 1(E~L열)로. `+
+      `번호 순서대로 따라가면 왕복 없이 한 방향. 시간 빠듯하면 ★(MUST-SEE) 위주로.`;
+  } else if(favOnly){
+    $("#routeNote").innerHTML = currentLoc
+      ? `<b>📍 현위치: ${currentLoc}</b> 기준 동선. 파란 점에서 출발해 번호 순서대로 도세요. 다른 카드를 탭하면 현위치 변경, ${currentLoc} 다시 탭하면 해제.`
+      : `<b>내가 고른 부스 동선</b> — 위 맵에 번호 순서로 표시돼요. <b>지금 서 있는 부스 카드를 탭하면</b> 그 자리(📍)에서 출발하는 동선으로 바뀌어요.`;
+  }
+  grid.innerHTML="";
+  let stop=0;
+  const routeNums=[];
+
+  if(!list.length){
+    grid.innerHTML = `<div class="empty">${favOnly?"아직 저장한 부스가 없어요.<br>카드의 ★를 눌러 동선을 만들어보세요.":"검색 결과가 없어요."}</div>`;
+    if(favOnly) setCustomRoute([]); else setRecoRoute();
+    setHereDot();
+    return;
+  }
+
+  let curHall="";
+  for(const b of list){
+    const hall=b[0][0];
+    if(hall!==curHall && !query){
+      curHall=hall;
+      const h=document.createElement("div");
+      h.className="hall";
+      h.textContent = hall==="M" ? "M · 라운지/공용" : (hall<="L"&&hall>="A" ? hall+"열" : hall);
+      grid.appendChild(h);
+    }
+    const c=CATS[b[3]];
+    const card=document.createElement("div");
+    card.className="card"+(currentLoc===b[0]?" here":"");
+    card.style.setProperty("--c",c.color);
+    const on=favs.has(id(b));
+    const isPick=PICKS.has(id(b));
+    let extra="";
+    if(routeMode||favOnly){ stop++; extra=`<div class="num">${stop}</div>`; if(routeMode&&isPick) extra+=`<div class="pick">★ MUST</div>`; }
+    if(favOnly) routeNums.push(b[0]);
+    if(currentLoc===b[0]) extra+=`<div class="here-tag">📍 지금</div>`;
+    card.innerHTML=`
+      <button class="star${on?" on":""}" aria-label="저장">${on?"★":"☆"}</button>
+      <div class="booth">${b[0]}</div>
+      <div class="ko">${b[1]}</div>
+      <div class="en">${b[2]}</div>
+      <div class="cat">${c.name}</div>${extra}`;
+    card.querySelector(".star").onclick=(e)=>{
+      e.stopPropagation();
+      const k=id(b);
+      if(favs.has(k)) favs.delete(k); else favs.add(k);
+      saveFavs(); render();
+    };
+    card.onclick=()=>{ currentLoc = (currentLoc===b[0]) ? null : b[0]; render(); };
+    grid.appendChild(card);
+  }
+
+  if(favOnly){ $("#routeSvg").classList.remove("hide"); $("#routeToggle").textContent="동선 끄기"; setCustomRoute(routeNums); }
+  else setRecoRoute();
+  setHereDot();
+}
+
+$("#search").addEventListener("input",e=>{
+  query=e.target.value.trim();
+  $("#clear").style.display = query?"block":"none";
+  render();
+});
+$("#clear").onclick=()=>{ query=""; $("#search").value=""; $("#clear").style.display="none"; render(); };
+$("#allBtn").onclick=()=>{ favOnly=false; routeMode=false; syncBtns(); render(); };
+$("#routeBtn").onclick=()=>{ routeMode=true; favOnly=false; activeCat="all"; syncBtns(); render(); };
+$("#favBtn").onclick=()=>{ favOnly=true; routeMode=false; activeCat="all"; syncBtns(); render(); };
+
+const mapScroll=$("#mapScroll");
+function toggleMap(){
+  const big=mapScroll.classList.toggle("big");
+  $("#mapZoom").textContent = big ? "축소 ⤡" : "확대 ⤢";
+}
+$("#mapZoom").onclick=toggleMap;
+mapScroll.querySelector("img").onclick=toggleMap;
+$("#routeToggle").onclick=()=>{
+  const hidden=$("#routeSvg").classList.toggle("hide");
+  $("#routeToggle").textContent = hidden ? "동선 켜기" : "동선 끄기";
+};
+
+buildLegend();
+saveFavs();
+render();
+</script>
+</body>
+</html>
