@@ -64,6 +64,8 @@
   .mapsec{background:#1f1d1a;padding:8px 0 4px}
   .maphint{color:#bbb;font-size:11px;padding:0 16px 6px;display:flex;justify-content:space-between;align-items:center}
   .maphint button{background:#3a3733;color:#eee;border:none;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer}
+  #hallNow{display:none;margin-left:6px;background:#e9a23b;color:#1f1d1a;font-weight:800;
+    font-size:10.5px;padding:2px 7px;border-radius:5px;letter-spacing:.03em;vertical-align:middle}
   .mapscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:0 16px}
   .mapinner{position:relative;display:inline-block;border-radius:8px;overflow:hidden}
   .mapscroll img{height:230px;width:auto;max-width:none;display:block;cursor:zoom-in;transition:height .2s}
@@ -78,6 +80,25 @@
   .card.here{outline:2px solid #2f6fed;outline-offset:-2px}
   .here-tag{position:absolute;bottom:8px;left:8px;font-size:9.5px;background:#2f6fed;color:#fff;
     font-weight:800;padding:2px 6px;border-radius:5px;letter-spacing:.02em}
+  .modal{position:fixed;inset:0;background:rgba(20,18,16,.55);z-index:50;display:none;
+    align-items:flex-end;justify-content:center}
+  .modal.show{display:flex}
+  .sheet{background:#fff;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;
+    border-radius:18px 18px 0 0;padding:18px 18px 26px;animation:slideup .22s ease}
+  @keyframes slideup{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
+  .sheet h2{margin:2px 0 2px;font-size:18px}
+  .sheet .lead{font-size:12.5px;color:#777;margin-bottom:16px}
+  .q{margin:0 0 16px}
+  .q .qt{font-size:14px;font-weight:800;margin-bottom:8px}
+  .q .qs{font-size:11px;color:#aaa;font-weight:600}
+  .opts{display:flex;flex-wrap:wrap;gap:7px}
+  .opt{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;
+    font-size:13px;font-weight:600;color:#444;cursor:pointer;user-select:none}
+  .opt.sel{background:#1f1d1a;color:#fff;border-color:#1f1d1a}
+  .sheet .go{width:100%;margin-top:6px;padding:13px;border:none;border-radius:12px;
+    background:#e9a23b;color:#1f1d1a;font-size:15px;font-weight:800;cursor:pointer}
+  .sheet .cancel{width:100%;margin-top:8px;padding:10px;border:none;background:none;
+    color:#999;font-size:13px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -89,7 +110,7 @@
 
 <div class="mapsec">
   <div class="maphint">
-    <span>← 좌우로 밀어 보기 · 빨간선이 추천 동선</span>
+    <span>← 좌우로 밀어 보기 · 빨간선이 추천 동선<span id="hallNow"></span></span>
     <span style="display:flex;gap:6px">
       <button id="routeToggle">동선 끄기</button>
       <button id="mapZoom">확대 ⤢</button>
@@ -136,10 +157,20 @@
   </div>
   <div class="rowbtns">
     <button id="allBtn" class="on">전체</button>
-    <button id="routeBtn">🗺️ 추천 동선</button>
+    <button id="routeBtn">🎯 맞춤 추천</button>
     <button id="favBtn">★ 내 동선 <span id="favCount">0</span></button>
   </div>
   <div id="routeNote"></div>
+</div>
+
+<div class="modal" id="quizModal">
+  <div class="sheet">
+    <h2>🎯 맞춤 부스 추천</h2>
+    <div class="lead">취향 퀴즈로 너한테 맞는 부스만 골라 동선을 짜줄게.</div>
+    <div id="quizBody"></div>
+    <button class="go" id="quizGo">맞춤 동선 만들기</button>
+    <button class="cancel" id="quizCancel">닫기</button>
+  </div>
 </div>
 
 <div class="chips" id="chips"></div>
@@ -291,11 +322,24 @@ const KEY = "inventario_favs";
 let favs = new Set(JSON.parse(localStorage.getItem(KEY) || "[]"));
 let activeCat = "all";
 let favOnly = false;
-let routeMode = false;
+let routeMode = false; // 맞춤 추천 결과 보기 모드
+let recoLineup = [];   // 퀴즈로 뽑힌 부스(순서대로)
 let query = "";
 
-// 헤이즐 집중 카테고리
-const ROUTE_CATS = new Set(["small","daily","office"]);
+// 해외 유명 브랜드 (브랜드 취향 점수용)
+const GLOBAL = new Set([
+  "A02|mt × rolledpaint","A03|FABER-CASTELL","A04|KAKIMORI","A08|CARAN D'ACHE",
+  "A09|SAILOR","A11|COPIC","B06|IWAKO","B08|PENCO®","C01|LOGITECH","C11|KOKUYO",
+  "E01|DOMINANT INDUSTRY","E04|KOREA PILOT","F06|ZEBRA","H06|RAYMAY KEPT","H06|PENTEL",
+  "J01|UNI","J04|MOLESKINE","J07|JACQUES HERBIN","J11|RHODIA","K01|MARK'S","K06|ANTERIQUE",
+  "L02|RIFLE PAPER CO.","L02|CRAFT DESIGN TECHNOLOGY","L08|TRAVELER'S COMPANY",
+  "L09|TRAVELER'S COMPANY WORKSHOP","B01|POV × HELLO KITTY","F05|KITTY BUNNY PONY",
+  "L03|CLIPEN","L06|SUATELIER","A06|POV"
+]);
+// 데스크셋업·책상 꾸미기 강추 소품
+const DESKY = new Set([
+  "L08|TRAVELER'S COMPANY","G04|OH, LOLLY DAY!","I04|OIMU","F02|MAGAZINE C","D05|WIP"
+]);
 // 시간 부족 시 우선 — MUST-SEE
 const PICKS = new Set([
   "A02|mt × rolledpaint","A06|POV","B08|PENCO®","C11|KOKUYO",
@@ -581,27 +625,29 @@ function syncBtns(){
 
 function render(){
   buildChips();
-  let list = BOOTHS.filter(b=>{
-    if(routeMode && !ROUTE_CATS.has(b[3])) return false;
-    if(favOnly && !favs.has(id(b))) return false;
-    if(!favOnly && !routeMode && activeCat!=="all" && b[3]!==activeCat) return false;
-    if(query){
-      const q=query.toLowerCase();
-      if(!(b[0].toLowerCase().includes(q) || b[1].toLowerCase().includes(q) || b[2].toLowerCase().includes(q))) return false;
-    }
-    return true;
-  });
-
-  list.sort((a,b)=>{
-    const ha=HALL_ORDER.indexOf(a[0][0]), hb=HALL_ORDER.indexOf(b[0][0]);
-    if(ha!==hb) return ha-hb;
-    return a[0].localeCompare(b[0],undefined,{numeric:true});
-  });
-
-  countEl.textContent = favOnly ? `내 동선 ${list.length}곳` : (routeMode ? `동선 ${list.length}곳 · ★표시는 시간 부족 시 우선` : `${list.length}개 부스`);
+  let list;
   if(routeMode){
-    $("#routeNote").innerHTML = `<b>3~4시간 동선</b> — HALL 2(A·B·C·D열) 먼저 쓸고 라운지 건너 HALL 1(E~L열)로. `+
-      `번호 순서대로 따라가면 왕복 없이 한 방향. 시간 빠듯하면 ★(MUST-SEE) 위주로.`;
+    list = recoLineup.slice();
+  } else {
+    list = BOOTHS.filter(b=>{
+      if(favOnly && !favs.has(id(b))) return false;
+      if(!favOnly && activeCat!=="all" && b[3]!==activeCat) return false;
+      if(query){
+        const q=query.toLowerCase();
+        if(!(b[0].toLowerCase().includes(q) || b[1].toLowerCase().includes(q) || b[2].toLowerCase().includes(q))) return false;
+      }
+      return true;
+    });
+    list.sort((a,b)=>{
+      const ha=HALL_ORDER.indexOf(a[0][0]), hb=HALL_ORDER.indexOf(b[0][0]);
+      if(ha!==hb) return ha-hb;
+      return a[0].localeCompare(b[0],undefined,{numeric:true});
+    });
+  }
+
+  countEl.textContent = favOnly ? `내 동선 ${list.length}곳` : (routeMode ? `🎯 맞춤 추천 ${list.length}곳` : `${list.length}개 부스`);
+  if(routeMode){
+    $("#routeNote").innerHTML = `<b>🎯 맞춤 동선 ${list.length}곳</b> — 취향 기준으로 골랐어요. 입구에서 번호 순서대로 따라가면 한 방향으로 돌아요. ★는 놓치면 아쉬운 곳. 다시 뽑으려면 위 <b>🎯 맞춤 추천</b> 버튼을 다시 탭.`;
   } else if(favOnly){
     $("#routeNote").innerHTML = currentLoc
       ? `<b>📍 현위치: ${currentLoc}</b> 기준 동선. 파란 점에서 출발해 번호 순서대로 도세요. 다른 카드를 탭하면 현위치 변경, ${currentLoc} 다시 탭하면 해제.`
@@ -636,7 +682,7 @@ function render(){
     const isPick=PICKS.has(id(b));
     let extra="";
     if(routeMode||favOnly){ stop++; extra=`<div class="num">${stop}</div>`; if(routeMode&&isPick) extra+=`<div class="pick">★ MUST</div>`; }
-    if(favOnly) routeNums.push(b[0]);
+    if(favOnly||routeMode) routeNums.push(b[0]);
     if(currentLoc===b[0]) extra+=`<div class="here-tag">📍 지금</div>`;
     card.innerHTML=`
       <button class="star${on?" on":""}" aria-label="저장">${on?"★":"☆"}</button>
@@ -654,7 +700,7 @@ function render(){
     grid.appendChild(card);
   }
 
-  if(favOnly){ $("#routeSvg").classList.remove("hide"); $("#routeToggle").textContent="동선 끄기"; setCustomRoute(routeNums); }
+  if(favOnly||routeMode){ $("#routeSvg").classList.remove("hide"); $("#routeToggle").textContent="동선 끄기"; setCustomRoute(routeNums); }
   else setRecoRoute();
   setHereDot();
 }
@@ -666,16 +712,125 @@ $("#search").addEventListener("input",e=>{
 });
 $("#clear").onclick=()=>{ query=""; $("#search").value=""; $("#clear").style.display="none"; render(); };
 $("#allBtn").onclick=()=>{ favOnly=false; routeMode=false; syncBtns(); render(); };
-$("#routeBtn").onclick=()=>{ routeMode=true; favOnly=false; activeCat="all"; syncBtns(); render(); };
+$("#routeBtn").onclick=openQuiz;
 $("#favBtn").onclick=()=>{ favOnly=true; routeMode=false; activeCat="all"; syncBtns(); render(); };
+
+// ---- 맞춤 추천 퀴즈 ----
+const QUIZ=[
+  {key:"cats",multi:true,t:"제일 노리는 카테고리는?",s:"복수 선택 OK",opts:[
+    {l:"펜·필기구",v:"writing"},{l:"노트·다이어리·종이",v:"paper"},
+    {l:"스티커·마테·소품",v:"small"},{l:"디자인·캐릭터 굿즈",v:"daily"},
+    {l:"데스크·오피스",v:"office"}]},
+  {key:"tier",t:"브랜드 취향은?",opts:[
+    {l:"해외 유명 브랜드",v:"global"},{l:"국내 독립·스몰",v:"indie"},{l:"안 가림",v:"any"}]},
+  {key:"n",t:"오늘 쓸 시간은?",opts:[
+    {l:"1~2시간 · 핵심 12곳",v:12},{l:"3시간 · 20곳",v:20},{l:"반나절 · 30곳",v:30}]},
+  {key:"desk",t:"책상 꾸미기·데스크셋업 관심?",opts:[
+    {l:"완전 좋아함",v:1},{l:"보통",v:0}]},
+  {key:"workshop",t:"워크숍·체험 부스도 들를래?",opts:[
+    {l:"응, 들를래",v:1},{l:"쇼핑 위주",v:0}]},
+];
+let quizState={cats:["small","daily","office"],tier:"any",n:20,desk:1,workshop:0};
+
+function renderQuiz(){
+  const body=$("#quizBody"); body.innerHTML="";
+  QUIZ.forEach(q=>{
+    const wrap=document.createElement("div"); wrap.className="q";
+    wrap.innerHTML=`<div class="qt">${q.t}${q.s?` <span class="qs">${q.s}</span>`:""}</div>`;
+    const opts=document.createElement("div"); opts.className="opts";
+    q.opts.forEach(o=>{
+      const sel=q.multi?quizState[q.key].includes(o.v):quizState[q.key]===o.v;
+      const btn=document.createElement("div");
+      btn.className="opt"+(sel?" sel":""); btn.textContent=o.l;
+      btn.onclick=()=>{
+        if(q.multi){ const arr=quizState[q.key],i=arr.indexOf(o.v); if(i>=0) arr.splice(i,1); else arr.push(o.v); }
+        else quizState[q.key]=o.v;
+        renderQuiz();
+      };
+      opts.appendChild(btn);
+    });
+    wrap.appendChild(opts); body.appendChild(wrap);
+  });
+}
+function openQuiz(){ renderQuiz(); $("#quizModal").classList.add("show"); }
+function closeQuiz(){ $("#quizModal").classList.remove("show"); }
+
+function scoreBooth(b,a){
+  if(b[3]==="common") return 0;
+  if(b[3]==="workshop" && !a.workshop) return 0;
+  let s=0;
+  if(a.cats.length){ if(a.cats.includes(b[3])) s+=3; } else s+=1;
+  const g=GLOBAL.has(id(b));
+  if(a.tier==="global") s+= g?2.5:0;
+  else if(a.tier==="indie") s+= g?0:1.5;
+  if(a.desk){ if(b[3]==="office") s+=2; if(DESKY.has(id(b))) s+=1.5; }
+  if(PICKS.has(id(b))) s+=1.2;
+  return s;
+}
+function computeReco(a){
+  const best={};
+  for(const b of BOOTHS){
+    const s=scoreBooth(b,a); if(s<=0) continue;
+    const c=b[0]; if(!best[c]||best[c][1]<s) best[c]=[b,s];
+  }
+  const pool=Object.values(best).sort((x,y)=>
+    y[1]-x[1] || ((PICKS.has(id(y[0]))?1:0)-(PICKS.has(id(x[0]))?1:0)));
+  let chosen;
+  if(a.cats.length){
+    const byCat={}; a.cats.forEach(c=>byCat[c]=[]); const extra=[];
+    for(const e of pool){ const cat=e[0][3]; (byCat[cat]||extra).push(e); }
+    chosen=[]; let added=true;
+    while(chosen.length<a.n && added){ // 선택 카테고리 균형 분배
+      added=false;
+      for(const c of a.cats){ if(byCat[c].length){ chosen.push(byCat[c].shift()); added=true; if(chosen.length>=a.n) break; } }
+    }
+    for(const e of extra){ if(chosen.length>=a.n) break; chosen.push(e); } // 부족 시 유명 브랜드로 채움
+  } else {
+    chosen=pool.slice(0,a.n);
+  }
+  chosen.sort((x,y)=>{ // 동선 순서: HALL2 먼저 → 열 → 번호
+    const hp=hallOf(COORDS[x[0][0]]||[0,0]), hq=hallOf(COORDS[y[0][0]]||[0,0]);
+    if(hp!==hq) return hq-hp;
+    const lp=HALL_ORDER.indexOf(x[0][0][0]), lq=HALL_ORDER.indexOf(y[0][0][0]);
+    if(lp!==lq) return lp-lq;
+    return x[0][0].localeCompare(y[0][0],undefined,{numeric:true});
+  });
+  return chosen.map(x=>x[0]);
+}
+function submitQuiz(){
+  recoLineup=computeReco(quizState);
+  closeQuiz();
+  routeMode=true; favOnly=false; activeCat="all"; currentLoc=null;
+  syncBtns(); render();
+  document.querySelector(".mapsec").scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("#quizGo").onclick=submitQuiz;
+$("#quizCancel").onclick=closeQuiz;
+$("#quizModal").onclick=(e)=>{ if(e.target.id==="quizModal") closeQuiz(); };
 
 const mapScroll=$("#mapScroll");
 function toggleMap(){
   const big=mapScroll.classList.toggle("big");
   $("#mapZoom").textContent = big ? "축소 ⤡" : "확대 ⤢";
+  requestAnimationFrame(updateHallLabel);
 }
 $("#mapZoom").onclick=toggleMap;
 mapScroll.querySelector("img").onclick=toggleMap;
+
+// 가로 스크롤 위치 → 지금 보는 구역 라벨 (확대 시 길찾기 보조)
+const hallNow=$("#hallNow"), mapImg=mapScroll.querySelector("img");
+function updateHallLabel(){
+  const w=mapImg.clientWidth, view=mapScroll.clientWidth;
+  if(w-view<8){ hallNow.style.display="none"; return; } // 다 보이면 라벨 불필요
+  const centerVb=((mapScroll.scrollLeft+view/2)/w)*2835;
+  const [txt,bg] = centerVb<1500 ? ["지금: HALL 2","#7b9e6b"]
+                 : centerVb<1680 ? ["지금: LOUNGE","#9a9a9a"]
+                 : ["지금: HALL 1","#5b8fd6"];
+  hallNow.textContent=txt; hallNow.style.background=bg;
+  hallNow.style.color="#fff"; hallNow.style.display="inline-block";
+}
+mapScroll.addEventListener("scroll",updateHallLabel,{passive:true});
+window.addEventListener("resize",updateHallLabel);
 $("#routeToggle").onclick=()=>{
   const hidden=$("#routeSvg").classList.toggle("hide");
   $("#routeToggle").textContent = hidden ? "동선 켜기" : "동선 끄기";
@@ -685,6 +840,7 @@ buildLegend();
 saveFavs();
 updateGpsUI();
 render();
+if(mapImg.complete) updateHallLabel(); else mapImg.addEventListener("load",updateHallLabel);
 </script>
 </body>
 </html>
