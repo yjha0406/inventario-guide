@@ -95,12 +95,12 @@
       <img src="map.png" alt="인벤타리오 부스 배치도">
       <svg class="route" id="routeSvg" viewBox="0 0 2835 1969" preserveAspectRatio="xMidYMid meet">
         <defs>
-          <marker id="arw" markerWidth="5" markerHeight="5" refX="2.6" refY="2.5" orient="auto" markerUnits="strokeWidth">
-            <path d="M0,0 L5,2.5 L0,5 Z" fill="#e6332a"></path>
+          <marker id="arw" markerWidth="4.2" markerHeight="4.2" refX="2.2" refY="2.1" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0.5 L4.2,2.1 L0,3.7 Z" fill="#e6332a"></path>
           </marker>
         </defs>
-        <path id="routeHalo" d="" fill="none" stroke="#ffffff" stroke-width="26" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"></path>
-        <path id="routeLine" d="" fill="none" stroke="#e6332a" stroke-width="13" stroke-linejoin="round" stroke-linecap="round"
+        <path id="routeHalo" d="" fill="none" stroke="#ffffff" stroke-width="13" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"></path>
+        <path id="routeLine" d="" fill="none" stroke="#e6332a" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"
               marker-mid="url(#arw)" marker-end="url(#arw)"></path>
         <g id="routeStops"></g>
         <g id="startTag" font-family="sans-serif" font-weight="800" text-anchor="middle">
@@ -319,10 +319,62 @@ const COORDS = {
 // 입구 2 · 출구 2 (재입장 가능) — 동선 시작=가까운 입구, 끝=가까운 출구
 const ENTRANCES = [[935,790],[1490,790]];
 const EXITS = [[298,790],[2110,790]];
-const RECO_D = "M935,790 L1380,735 L1100,651 L555,651 L555,370 L1110,370 L1110,250 L1865,250 L1865,330 L1865,490 L1865,645 L2350,660 L2380,490 L2380,330 L2702,300 L2702,720 L2110,790";
 let currentLoc = null; // 현위치로 지정한 부스번호
 
 function nearest(list,t){ let best=list[0],bd=Infinity; for(const p of list){const dx=p[0]-t[0],dy=p[1]-t[1],dd=dx*dx+dy*dy; if(dd<bd){bd=dd;best=p;}} return best; }
+
+// --- 통로 격자: 부스 박스 피해 통로(아일)로 라우팅 ---
+const HALL2_HY=[200,525,768], HALL2_VX=[258,850,1310];
+const HALL1_HY=[250,412,565,768], HALL1_VX=[1685,2090,2665];
+const SPINE_Y=768; // 양 홀을 잇는 하단 통로(입·출구 라인)
+function hallOf(p){ return p[0]<1400?2:1; }
+function HY(h){ return h===2?HALL2_HY:HALL1_HY; }
+function VX(h){ return h===2?HALL2_VX:HALL1_VX; }
+function nv(arr,v){ let b=arr[0],bd=Math.abs(arr[0]-v); for(const a of arr){const d=Math.abs(a-v); if(d<bd){bd=d;b=a;}} return b; }
+// 두 점을 통로만 따라 잇는 경유점(맨해튼)
+function legBetween(p1,p2){
+  const h1=hallOf(p1),h2=hallOf(p2);
+  const a1=nv(HY(h1),p1[1]),a2=nv(HY(h2),p2[1]);
+  const out=[[p1[0],a1]];
+  if(h1===h2 && a1===a2){ out.push([p2[0],a2]); }
+  else if(h1===h2){
+    const vx=nv(VX(h1),(p1[0]+p2[0])/2);
+    out.push([vx,a1],[vx,a2],[p2[0],a2]);
+  } else {
+    const vx1=nv(VX(h1),p1[0]),vx2=nv(VX(h2),p2[0]);
+    out.push([vx1,a1],[vx1,SPINE_Y],[vx2,SPINE_Y],[vx2,a2],[p2[0],a2]);
+  }
+  out.push([p2[0],p2[1]]);
+  return out;
+}
+function buildAisle(points){
+  const poly=[[points[0][0],points[0][1]]];
+  for(let i=1;i<points.length;i++){
+    for(const q of legBetween(points[i-1],points[i])){
+      const last=poly[poly.length-1];
+      if(Math.abs(last[0]-q[0])>1||Math.abs(last[1]-q[1])>1) poly.push(q);
+    }
+  }
+  return poly;
+}
+// 코너 둥글림 → 부드러운 곡선
+function roundedPath(P,r){
+  if(P.length<3) return "M"+P.map(p=>p[0]+","+p[1]).join(" L");
+  let d=`M${P[0][0]},${P[0][1]}`;
+  for(let i=1;i<P.length-1;i++){
+    const a=P[i-1],c=P[i],b=P[i+1];
+    const v1x=c[0]-a[0],v1y=c[1]-a[1],l1=Math.hypot(v1x,v1y)||1;
+    const v2x=b[0]-c[0],v2y=b[1]-c[1],l2=Math.hypot(v2x,v2y)||1;
+    const r1=Math.min(r,l1/2),r2=Math.min(r,l2/2);
+    const inx=c[0]-v1x/l1*r1,iny=c[1]-v1y/l1*r1;
+    const outx=c[0]+v2x/l2*r2,outy=c[1]+v2y/l2*r2;
+    d+=` L${inx.toFixed(1)},${iny.toFixed(1)} Q${c[0]},${c[1]} ${outx.toFixed(1)},${outy.toFixed(1)}`;
+  }
+  const last=P[P.length-1];
+  d+=` L${last[0]},${last[1]}`;
+  return d;
+}
+const RECO_PTS=[[935,790],[935,525],[258,525],[258,200],[850,200],[850,525],[1310,525],[1310,768],[1685,768],[1685,250],[2090,250],[2090,565],[2665,565],[2665,768],[2110,768],[2110,790]];
 
 const $ = s => document.querySelector(s);
 const grid = $("#grid"), countEl = $("#count");
@@ -331,8 +383,9 @@ function ptOf(num){ return COORDS[num] || null; }
 
 // 추천 동선(고정) 표시
 function setRecoRoute(){
-  $("#routeHalo").setAttribute("d",RECO_D);
-  $("#routeLine").setAttribute("d",RECO_D);
+  const d=roundedPath(RECO_PTS,30);
+  $("#routeHalo").setAttribute("d",d);
+  $("#routeLine").setAttribute("d",d);
   $("#routeStops").innerHTML="";
   $("#startTag").style.display="";
 }
@@ -356,7 +409,8 @@ function setCustomRoute(orderedNums){
   const start = useHere ? COORDS[currentLoc] : nearest(ENTRANCES, stops[0]);
   const end = nearest(EXITS, stops[stops.length-1]);
   const pts=[start,...stops,end];
-  const d="M"+pts.map(p=>p[0]+","+p[1]).join(" L");
+  const poly=buildAisle(pts);
+  const d=roundedPath(poly,26);
   $("#routeHalo").setAttribute("d",d);
   $("#routeLine").setAttribute("d",d);
   let h="";
