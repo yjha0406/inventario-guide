@@ -70,6 +70,11 @@
   .mapscroll.big img{height:560px;cursor:zoom-out}
   svg.route{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
   svg.route.hide{display:none}
+  .gpsbar{display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:8px 16px 4px}
+  .gpsbar .gpsmsg{flex:1 1 100%;font-size:11.5px;color:#cfcabf;line-height:1.4}
+  .gpsbar button{background:#2f6fed;color:#fff;border:none;font-size:12px;font-weight:700;
+    padding:7px 12px;border-radius:8px;cursor:pointer}
+  .gpsbar button.ghost{background:#3a3733;color:#ddd}
   .card.here{outline:2px solid #2f6fed;outline-offset:-2px}
   .here-tag{position:absolute;bottom:8px;left:8px;font-size:9.5px;background:#2f6fed;color:#fff;
     font-weight:800;padding:2px 6px;border-radius:5px;letter-spacing:.02em}
@@ -112,6 +117,7 @@
           <text x="2110" y="839" font-size="29" fill="#fff">출구 OUT</text>
         </g>
         <g id="hereDot" style="display:none">
+          <circle id="accCircle" r="0" fill="#2f6fed" opacity="0.12" style="display:none"></circle>
           <circle r="40" fill="#2f6fed" opacity="0.22"><animate attributeName="r" values="22;46;22" dur="1.4s" repeatCount="indefinite"></animate></circle>
           <circle r="16" fill="#2f6fed" stroke="#fff" stroke-width="5"></circle>
           <rect x="-66" y="22" width="132" height="40" rx="8" fill="#2f6fed"></rect>
@@ -120,6 +126,7 @@
       </svg>
     </div>
   </div>
+  <div class="gpsbar" id="gpsBar"></div>
 </div>
 
 <div class="toolbar">
@@ -319,7 +326,90 @@ const COORDS = {
 // 입구 2 · 출구 2 (재입장 가능) — 동선 시작=가까운 입구, 끝=가까운 출구
 const ENTRANCES = [[935,790],[1490,790]];
 const EXITS = [[298,790],[2110,790]];
-let currentLoc = null; // 현위치로 지정한 부스번호
+let currentLoc = null; // 현위치로 지정한 부스번호(수동)
+
+// ── 실시간 GPS 현위치 ───────────────────────────
+// 도면(픽셀)과 실제 GPS를 잇는 기준점 2개를 현장에서 보정해 저장한다.
+const GKEY = "inventario_geoanchors";
+let geoAnchors = JSON.parse(localStorage.getItem(GKEY) || "[]"); // [{lat,lon,px,py,booth}]
+let lastPos = null;   // {lat,lon,acc} 최근 GPS
+let gpsActive = false;
+let watchId = null;
+
+// 두 기준점으로 GPS(위경도) → 도면 픽셀 닮음변환(회전·균일스케일·평행이동)
+function gpsToPixel(lat,lon){
+  const a0=geoAnchors[0], a1=geoAnchors[1];
+  const k=Math.cos(a0.lat*Math.PI/180); // 경도 거리 보정
+  const pBx=(a1.lon-a0.lon)*k, pBy=(a1.lat-a0.lat);
+  const pPx=(lon-a0.lon)*k,    pPy=(lat-a0.lat);
+  const dqx=a1.px-a0.px, dqy=a1.py-a0.py;
+  const den=pBx*pBx+pBy*pBy;
+  if(den===0) return null;
+  // 복소수 나눗셈 a = dq / dp
+  const ax=(dqx*pBx+dqy*pBy)/den;
+  const ay=(dqy*pBx-dqx*pBy)/den;
+  const qx=ax*pPx-ay*pPy + a0.px;
+  const qy=ay*pPx+ax*pPy + a0.py;
+  const scale=Math.sqrt(ax*ax+ay*ay); // 픽셀/도(degree)
+  return {x:qx,y:qy,scale};
+}
+
+function startGps(){
+  if(!navigator.geolocation){ alert("이 브라우저는 위치 기능을 지원하지 않아요."); return; }
+  gpsActive=true; updateGpsUI();
+  watchId=navigator.geolocation.watchPosition(onPos,onErr,
+    {enableHighAccuracy:true,maximumAge:1000,timeout:15000});
+}
+function stopGps(){
+  if(watchId!=null) navigator.geolocation.clearWatch(watchId);
+  watchId=null; gpsActive=false; lastPos=null; updateGpsUI(); setHereDot();
+}
+function onPos(p){
+  lastPos={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy};
+  updateGpsUI(); setHereDot();
+}
+function onErr(e){
+  gpsActive=false; updateGpsUI();
+  alert(e.code===1 ? "위치 권한이 거부됐어요. 브라우저 설정에서 위치 접근을 허용해 주세요."
+                   : "GPS 신호를 받지 못했어요. 실내에서는 잠시 걸릴 수 있어요.");
+}
+// 지금 선택한 부스 카드를 기준점으로 현재 GPS와 묶어 저장
+function calibrateHere(){
+  if(!lastPos){ alert("GPS 신호를 받는 중이에요. 잠시 후 다시 눌러주세요."); return; }
+  if(!currentLoc || !COORDS[currentLoc]){ alert("먼저 지금 서 있는 부스 카드를 탭해서 선택하세요."); return; }
+  if(geoAnchors.some(a=>a.booth===currentLoc)){ alert("이미 보정한 부스예요. 다른 부스로 이동해서 보정하세요."); return; }
+  const [px,py]=COORDS[currentLoc];
+  geoAnchors.push({lat:lastPos.lat,lon:lastPos.lon,px,py,booth:currentLoc});
+  if(geoAnchors.length>2) geoAnchors=geoAnchors.slice(-2);
+  localStorage.setItem(GKEY,JSON.stringify(geoAnchors));
+  updateGpsUI(); setHereDot(); render();
+}
+function resetGps(){ geoAnchors=[]; localStorage.removeItem(GKEY); updateGpsUI(); setHereDot(); render(); }
+
+function updateGpsUI(){
+  const bar=document.querySelector("#gpsBar");
+  if(!gpsActive){
+    bar.innerHTML=`<button id="gpsStart">📍 내 위치 켜기</button>`;
+    bar.querySelector("#gpsStart").onclick=startGps;
+    return;
+  }
+  const n=geoAnchors.length;
+  const accTxt=lastPos?`GPS ±${Math.round(lastPos.acc)}m`:"GPS 신호 받는 중…";
+  let s="";
+  if(n<2){
+    s=`<span class="gpsmsg">📍 ${accTxt} · 보정 ${n}/2 — 지금 서 있는 부스 카드를 탭한 뒤 아래 버튼을 누르세요. 두 곳을 보정하면 실시간 위치가 잡혀요.</span>`+
+      `<button id="gpsCal">📌 여기서 보정 (${n+1}/2)</button>`+
+      `<button id="gpsOff" class="ghost">끄기</button>`;
+  }else{
+    s=`<span class="gpsmsg">📍 실시간 추적 중 · ${accTxt} (실내라 오차가 클 수 있어요)</span>`+
+      `<button id="gpsReset" class="ghost">보정 다시</button>`+
+      `<button id="gpsOff" class="ghost">끄기</button>`;
+  }
+  bar.innerHTML=s;
+  const cal=bar.querySelector("#gpsCal"); if(cal) cal.onclick=calibrateHere;
+  const rst=bar.querySelector("#gpsReset"); if(rst) rst.onclick=resetGps;
+  const off=bar.querySelector("#gpsOff"); if(off) off.onclick=stopGps;
+}
 
 function nearest(list,t){ let best=list[0],bd=Infinity; for(const p of list){const dx=p[0]-t[0],dy=p[1]-t[1],dd=dx*dx+dy*dy; if(dd<bd){bd=dd;best=p;}} return best; }
 
@@ -348,13 +438,15 @@ function legBetween(p1,p2){
   return out;
 }
 function buildAisle(points){
+  const stopKey=new Set(points.map(p=>p[0]+","+p[1])); // 실제 정차(부스·입·출구) 정점
   const poly=[[points[0][0],points[0][1]]];
   for(let i=1;i<points.length;i++){
     for(const q of legBetween(points[i-1],points[i])){
       const last=poly[poly.length-1];
-      if(Math.abs(last[0]-q[0])>1||Math.abs(last[1]-q[1])>1) poly.push(q);
+      if(Math.abs(last[0]-q[0])>1||Math.abs(last[1]-q[1])>1) poly.push([q[0],q[1]]);
     }
   }
+  for(const p of poly) p[2]=stopKey.has(p[0]+","+p[1])?1:0;
   return poly;
 }
 // 코너 둥글림 → 부드러운 곡선
@@ -365,7 +457,8 @@ function roundedPath(P,r){
     const a=P[i-1],c=P[i],b=P[i+1];
     const v1x=c[0]-a[0],v1y=c[1]-a[1],l1=Math.hypot(v1x,v1y)||1;
     const v2x=b[0]-c[0],v2y=b[1]-c[1],l2=Math.hypot(v2x,v2y)||1;
-    const r1=Math.min(r,l1/2),r2=Math.min(r,l2/2);
+    const rr=c[2]?5:r; // 정차 부스에선 거의 안 둥글려 선이 점에 닿게
+    const r1=Math.min(rr,l1/2),r2=Math.min(rr,l2/2);
     const inx=c[0]-v1x/l1*r1,iny=c[1]-v1y/l1*r1;
     const outx=c[0]+v2x/l2*r2,outy=c[1]+v2y/l2*r2;
     d+=` L${inx.toFixed(1)},${iny.toFixed(1)} Q${c[0]},${c[1]} ${outx.toFixed(1)},${outy.toFixed(1)}`;
@@ -429,12 +522,25 @@ function setCustomRoute(orderedNums){
   stopsG.innerHTML=h;
 }
 
-// 현위치 파란 점
+// 현위치 파란 점 (GPS 추적 중이면 실제 위치, 아니면 수동 지정 부스)
 function setHereDot(){
-  const g=$("#hereDot");
-  if(currentLoc && COORDS[currentLoc]){
-    const [x,y]=COORDS[currentLoc];
-    g.setAttribute("transform",`translate(${x},${y})`);
+  const g=$("#hereDot"), acc=$("#accCircle");
+  let show=null;
+  if(gpsActive && geoAnchors.length>=2 && lastPos){
+    const r=gpsToPixel(lastPos.lat,lastPos.lon);
+    if(r){
+      show={x:r.x,y:r.y};
+      const accPx=Math.max(10,(lastPos.acc/111320)*r.scale); // 미터→도→픽셀
+      acc.setAttribute("r",accPx);
+      acc.style.display="";
+    }
+  }
+  if(!show){
+    acc.style.display="none";
+    if(currentLoc && COORDS[currentLoc]){ const [x,y]=COORDS[currentLoc]; show={x,y}; }
+  }
+  if(show){
+    g.setAttribute("transform",`translate(${show.x},${show.y})`);
     g.style.display="";
   } else g.style.display="none";
 }
@@ -577,6 +683,7 @@ $("#routeToggle").onclick=()=>{
 
 buildLegend();
 saveFavs();
+updateGpsUI();
 render();
 </script>
 </body>
