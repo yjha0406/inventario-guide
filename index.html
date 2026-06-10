@@ -130,23 +130,9 @@
     <div class="mapinner">
       <img src="map.png" alt="인벤타리오 부스 배치도">
       <svg class="route" id="routeSvg" viewBox="0 0 2835 1969" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <marker id="arw" markerWidth="4.2" markerHeight="4.2" refX="2.2" refY="2.1" orient="auto" markerUnits="strokeWidth">
-            <path d="M0,0.5 L4.2,2.1 L0,3.7 Z" fill="#e6332a"></path>
-          </marker>
-        </defs>
         <path id="routeHalo" d="" fill="none" stroke="#ffffff" stroke-width="13" stroke-linejoin="round" stroke-linecap="round" opacity="0.85"></path>
-        <path id="routeLine" d="" fill="none" stroke="#e6332a" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"
-              marker-mid="url(#arw)" marker-end="url(#arw)"></path>
+        <path id="routeLine" d="" fill="none" stroke="#e6332a" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"></path>
         <g id="routeStops"></g>
-        <g id="startTag" font-family="sans-serif" font-weight="800" text-anchor="middle">
-          <circle cx="935" cy="790" r="19" fill="#1f9d55" stroke="#fff" stroke-width="5"></circle>
-          <rect x="858" y="808" width="154" height="44" rx="8" fill="#1f9d55"></rect>
-          <text x="935" y="839" font-size="29" fill="#fff">입구 IN</text>
-          <circle cx="2110" cy="790" r="19" fill="#e6332a" stroke="#fff" stroke-width="5"></circle>
-          <rect x="2033" y="808" width="154" height="44" rx="8" fill="#e6332a"></rect>
-          <text x="2110" y="839" font-size="29" fill="#fff">출구 OUT</text>
-        </g>
         <g id="hiBooth" style="display:none">
           <circle r="34" fill="none" stroke="#e9a23b" stroke-width="6" opacity="0.9">
             <animate attributeName="r" values="20;52;20" dur="1.2s" repeatCount="indefinite"></animate>
@@ -386,9 +372,9 @@ const COORDS = {
   L01:[2702,712],L02:[2702,605],L03:[2702,525],L04:[2702,415],L05:[2702,285],L06:[2460,215],L07:[2385,215],L08:[2190,215],L09:[2175,115],
   M01:[1475,475],M02:[1810,215],M03:[172,650],M04:[2385,115]
 };
-// 입구 2 · 출구 2 (재입장 가능) — 동선 시작=가까운 입구, 끝=가까운 출구
-const ENTRANCES = [[935,790],[1490,790]];
-const EXITS = [[298,790],[2110,790]];
+// 문(재입장 가능): 홀2 입구1·출구1, 홀1 입구2·출구2 — 동선 시작=가까운 입구, 끝=가까운 출구
+const ENTRANCES = [[840,790],[1270,790],[1420,790]];
+const EXITS = [[270,790],[2180,790],[2330,790]];
 let currentLoc = null; // 현위치로 지정한 부스번호(수동)
 
 // ── 실시간 GPS 현위치 ───────────────────────────
@@ -480,6 +466,7 @@ function nearest(list,t){ let best=list[0],bd=Infinity; for(const p of list){con
 const HALL2_HY=[200,525,768], HALL2_VX=[258,850,1310];
 const HALL1_HY=[250,412,565,768], HALL1_VX=[1685,2090,2665];
 const SPINE_Y=768; // 양 홀을 잇는 하단 통로(입·출구 라인)
+function loungeEdgeX(h){ return h===2?1310:1685; } // 각 홀의 라운지쪽 경계 세로통로
 function hallOf(p){ return p[0]<1400?2:1; }
 function HY(h){ return h===2?HALL2_HY:HALL1_HY; }
 function VX(h){ return h===2?HALL2_VX:HALL1_VX; }
@@ -494,8 +481,9 @@ function legBetween(p1,p2){
     const vx=nv(VX(h1),(p1[0]+p2[0])/2);
     out.push([vx,a1],[vx,a2],[p2[0],a2]);
   } else {
-    const vx1=nv(VX(h1),p1[0]),vx2=nv(VX(h2),p2[0]);
-    out.push([vx1,a1],[vx1,SPINE_Y],[vx2,SPINE_Y],[vx2,a2],[p2[0],a2]);
+    // 다른 홀로 건널 때: 하단 통로(spine)에서 라운지 경계 세로통로로만 가로지름 (추천 동선과 동일)
+    const bx1=loungeEdgeX(h1), bx2=loungeEdgeX(h2);
+    out.push([bx1,a1],[bx1,SPINE_Y],[bx2,SPINE_Y],[bx2,a2],[p2[0],a2]);
   }
   out.push([p2[0],p2[1]]);
   return out;
@@ -511,6 +499,42 @@ function buildAisle(points){
   }
   for(const p of poly) p[2]=stopKey.has(p[0]+","+p[1])?1:0;
   return poly;
+}
+// 두 점 사이 통로 경로 길이(맨해튼 경유)
+function aisleLen(p1,p2){ const L=legBetween(p1,p2); let s=0; for(let i=1;i<L.length;i++){ s+=Math.abs(L[i][0]-L[i-1][0])+Math.abs(L[i][1]-L[i-1][1]); } return s; }
+// 통로거리 기준 최근접
+function nearestAisle(list,t){ let best=list[0],bd=Infinity; for(const p of list){const d=aisleLen(p,t); if(d<bd){bd=d;best=p;}} return best; }
+// 문이 속한 홀(라운지 옆이라 x임계값으로 안 갈리므로 명시 태그)
+const DOOR_HALL=new Map([["840,790",2],["1270,790",1],["1420,790",1],["270,790",2],["2180,790",1],["2330,790",1]]);
+function doorHall(p){ return DOOR_HALL.get(p[0]+","+p[1]); }
+// 끝/시작 부스와 같은 홀의 문만 후보로 → 출구 위해 반대편 홀로 되건너는 일 방지
+function nearestDoor(list,t){ const th=hallOf(t); const same=list.filter(p=>doorHall(p)===th); return nearestAisle(same.length?same:list,t); }
+// 한 홀 안에서 행(밴드) 단위 serpentine 정렬: 진입 위치 기준으로 가까운 행부터 좌우 갈지자
+function orderHall(items, entry, hall){
+  const arr=items.slice().sort((a,b)=>a.p[1]-b.p[1]);
+  const bands=[]; let cur=[arr[0]];
+  for(let i=1;i<arr.length;i++){ if(arr[i].p[1]-cur[cur.length-1].p[1]>120){ bands.push(cur); cur=[]; } cur.push(arr[i]); }
+  bands.push(cur);
+  if(entry[1] > 480) bands.reverse();            // 하단 진입이면 아래 행부터
+  const mid = hall===2 ? 780 : 2200;             // 홀 가로 중앙(라운지쪽 진입 판별용)
+  let ltr = entry[0] < mid;                       // 진입 x가 왼쪽이면 → , 오른쪽이면 ←
+  const res=[];
+  for(const b of bands){ b.sort((p,q)=> ltr ? p.p[0]-q.p[0] : q.p[0]-p.p[0]); res.push(...b); ltr=!ltr; }
+  return res;
+}
+// 선택 순서 무시 → 실제 동선 순서로 정렬: 시작점 홀부터 행 단위로 훑고 다음 홀
+function routeOrder(nums, startPt){
+  const items=nums.map(n=>({n,p:COORDS[n]})).filter(x=>x.p);
+  const h2=items.filter(x=>hallOf(x.p)===2), h1=items.filter(x=>hallOf(x.p)===1);
+  const groups = hallOf(startPt)===1 ? [[h1,1],[h2,2]] : [[h2,2],[h1,1]];
+  const res=[]; let entry=startPt;
+  for(const [group,h] of groups){
+    if(!group.length) continue;
+    const ordered=orderHall(group, entry, h);
+    res.push(...ordered.map(x=>x.n));
+    entry=ordered[ordered.length-1].p;
+  }
+  return res;
 }
 // 코너 둥글림 → 부드러운 곡선
 function roundedPath(P,r){
@@ -543,13 +567,11 @@ function setRecoRoute(){
   $("#routeHalo").setAttribute("d",d);
   $("#routeLine").setAttribute("d",d);
   $("#routeStops").innerHTML="";
-  $("#startTag").style.display="";
 }
 
 // 선택 부스 기반 동선 (시작=현위치 또는 가까운 입구, 끝=가까운 출구)
 function setCustomRoute(orderedNums){
   const stopsG=$("#routeStops");
-  $("#startTag").style.display="none";
   const stops=[]; const seen=new Set();
   orderedNums.forEach(n=>{
     if(currentLoc && n===currentLoc) return;
@@ -562,8 +584,8 @@ function setCustomRoute(orderedNums){
     stopsG.innerHTML=""; return;
   }
   const useHere = currentLoc && COORDS[currentLoc];
-  const start = useHere ? COORDS[currentLoc] : nearest(ENTRANCES, stops[0]);
-  const end = nearest(EXITS, stops[stops.length-1]);
+  const start = useHere ? COORDS[currentLoc] : nearestDoor(ENTRANCES, stops[0]);
+  const end = nearestDoor(EXITS, stops[stops.length-1]);
   const pts=[start,...stops,end];
   const poly=buildAisle(pts);
   const d=roundedPath(poly,26);
@@ -574,14 +596,6 @@ function setCustomRoute(orderedNums){
     h+=`<circle cx="${p[0]}" cy="${p[1]}" r="18" fill="#e6332a" stroke="#fff" stroke-width="4"></circle>`+
        `<text x="${p[0]}" y="${p[1]+9}" font-size="25" font-weight="800" fill="#fff" text-anchor="middle" font-family="sans-serif">${i+1}</text>`;
   });
-  if(!useHere){
-    h+=`<circle cx="${start[0]}" cy="${start[1]}" r="19" fill="#1f9d55" stroke="#fff" stroke-width="5"></circle>`+
-       `<rect x="${start[0]-77}" y="${start[1]+18}" width="154" height="44" rx="8" fill="#1f9d55"></rect>`+
-       `<text x="${start[0]}" y="${start[1]+49}" font-size="29" font-weight="800" fill="#fff" text-anchor="middle" font-family="sans-serif">입구 IN</text>`;
-  }
-  h+=`<circle cx="${end[0]}" cy="${end[1]}" r="19" fill="#e6332a" stroke="#fff" stroke-width="5"></circle>`+
-     `<rect x="${end[0]-77}" y="${end[1]+18}" width="154" height="44" rx="8" fill="#e6332a"></rect>`+
-     `<text x="${end[0]}" y="${end[1]+49}" font-size="29" font-weight="800" fill="#fff" text-anchor="middle" font-family="sans-serif">출구 OUT</text>`;
   stopsG.innerHTML=h;
 }
 
@@ -676,11 +690,25 @@ function render(){
       }
       return true;
     });
-    list.sort((a,b)=>{
-      const ha=HALL_ORDER.indexOf(a[0][0]), hb=HALL_ORDER.indexOf(b[0][0]);
-      if(ha!==hb) return ha-hb;
-      return a[0].localeCompare(b[0],undefined,{numeric:true});
-    });
+    if(favOnly && !query && list.length){
+      // 내 동선: 선택 순서 대신 실제 동선 순서로 재배열
+      let startPt;
+      if(currentLoc && COORDS[currentLoc]) startPt=COORDS[currentLoc];
+      else{
+        const pts=list.map(b=>COORDS[b[0]]).filter(Boolean);
+        const cx=pts.reduce((s,p)=>s+p[0],0)/pts.length, cy=pts.reduce((s,p)=>s+p[1],0)/pts.length;
+        startPt=nearest(ENTRANCES,[cx,cy]);
+      }
+      const ord=routeOrder(list.map(b=>b[0]),startPt);
+      const pos=new Map(ord.map((n,i)=>[n,i]));
+      list.sort((a,b)=>pos.get(a[0])-pos.get(b[0]));
+    } else {
+      list.sort((a,b)=>{
+        const ha=HALL_ORDER.indexOf(a[0][0]), hb=HALL_ORDER.indexOf(b[0][0]);
+        if(ha!==hb) return ha-hb;
+        return a[0].localeCompare(b[0],undefined,{numeric:true});
+      });
+    }
   }
 
   countEl.textContent = favOnly ? `내 동선 ${list.length}곳` : (routeMode ? `🎯 맞춤 추천 ${list.length}곳` : `${list.length}개 부스`);
@@ -704,12 +732,13 @@ function render(){
 
   let curHall="";
   for(const b of list){
-    const hall=b[0][0];
+    const cp=COORDS[b[0]];
+    const hall = favOnly && cp ? "PLATZ HALL "+hallOf(cp) : b[0][0];
     if(hall!==curHall && !query){
       curHall=hall;
       const h=document.createElement("div");
       h.className="hall";
-      h.textContent = hall==="M" ? "M · 라운지/공용" : (hall<="L"&&hall>="A" ? hall+"열" : hall);
+      h.textContent = favOnly ? hall : (hall==="M" ? "M · 라운지/공용" : (hall<="L"&&hall>="A" ? hall+"열" : hall));
       grid.appendChild(h);
     }
     const c=CATS[b[3]];
